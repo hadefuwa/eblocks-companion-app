@@ -1,0 +1,150 @@
+.serial-monitor {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 500px;
+}
+
+.monitor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.monitor-header h2 {
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.monitor-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.monitor-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.monitor-controls select {
+  padding: 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.checkbox-label {
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  cursor: pointer;
+}
+
+.monitor-filter {
+  margin-bottom: 1rem;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.monitor-content {
+  flex: 1;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 300px;
+  margin-bottom: 1rem;
+}
+
+.monitor-empty {
+  color: #888;
+  text-align: center;
+  padding: 2rem;
+}
+
+.monitor-line {
+  margin-bottom: 0.25rem;
+  word-wrap: break-word;
+}
+
+.monitor-timestamp {
+  color: #888;
+  margin-right: 0.5rem;
+  font-size: 0.85em;
+}
+
+.monitor-data {
+  color: #d4d4d4;
+}
+
+.monitor-input-section {
+  margin-top: auto;
+}
+
+.monitor-input-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.monitor-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.monitor-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.btn-send {
+  padding: 0.75rem 1.5rem;
+  white-space: nowrap;
+}
+
+.monitor-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.monitor-status .status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
+}
+
+.monitor-status .status-indicator.active {
+  background: #28a745;
+  animation: pulse 2s infinite;
+}
+
