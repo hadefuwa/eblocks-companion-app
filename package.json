@@ -1,11 +1,14 @@
 {
   "name": "eblocks-companion-app",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Companion app for E-Blocks 3 - Connect, upload code, and monitor serial output",
   "main": "electron/wrapper.cjs",
   "scripts": {
     "start": "electron .",
-    "dev": "electron ."
+    "dev": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "dist": "electron-builder --publish=never"
   },
   "keywords": [
     "eblocks",
@@ -18,14 +21,62 @@
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
     "nodemon": "^3.0.2"
   },
   "dependencies": {
     "@serialport/parser-readline": "^13.0.0",
     "cors": "^2.8.5",
-    "electron": "^39.2.7",
     "express": "^4.18.2",
     "monaco-editor": "^0.55.1",
     "serialport": "^12.0.0"
+  },
+  "build": {
+    "appId": "com.matrix.eblocks3.companion",
+    "productName": "E-Blocks 3 Companion",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "renderer/**/*",
+      "assets/**/*",
+      "resources/**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+    ],
+    "extraFiles": [
+      {
+        "from": "resources/arduino-cli",
+        "to": "resources/arduino-cli",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
