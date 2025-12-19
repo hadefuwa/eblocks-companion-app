@@ -13,7 +13,13 @@ function SerialMonitor({ port, isConnected, onData, data }) {
 
   useEffect(() => {
     if (port && isConnected) {
-      startReading()
+      if (window.electronAPI && port.connectionId) {
+        // Use Electron IPC
+        startReadingElectron()
+      } else {
+        // Use Web Serial API
+        startReading()
+      }
     } else {
       stopReading()
     }
@@ -29,12 +35,54 @@ function SerialMonitor({ port, isConnected, onData, data }) {
     }
   }, [data, autoScroll])
 
+  const startReadingElectron = () => {
+    if (!port || !port.connectionId || isReading) return
+
+    setIsReading(true)
+    
+    // Set up IPC listener for serial data
+    if (window.electronAPI) {
+      window.electronAPI.onSerialData((eventData) => {
+        if (eventData.port === port.port || eventData.port === port.connectionId) {
+          if (onData) {
+            onData(eventData.data)
+          }
+        }
+      })
+    }
+
+    // Poll for data
+    const pollInterval = setInterval(async () => {
+      if (!port || !port.connectionId) {
+        clearInterval(pollInterval)
+        return
+      }
+      
+      try {
+        if (window.electronAPI) {
+          const result = await window.electronAPI.serialGetData({ connectionId: port.connectionId })
+          if (result.success && result.data) {
+            result.data.forEach(data => {
+              if (onData) {
+                onData(data)
+              }
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Serial read error:', error)
+      }
+    }, 100) // Poll every 100ms
+
+    readerRef.current = { cancel: () => clearInterval(pollInterval) }
+  }
+
   const startReading = async () => {
     if (!port || isReading) return
 
     try {
       // Close existing reader if any
-      if (readerRef.current) {
+      if (readerRef.current && readerRef.current.cancel) {
         await readerRef.current.cancel()
       }
 
@@ -66,13 +114,23 @@ function SerialMonitor({ port, isConnected, onData, data }) {
   const stopReading = async () => {
     if (readerRef.current) {
       try {
-        await readerRef.current.cancel()
-        await readerRef.current.releaseLock()
+        if (readerRef.current.cancel) {
+          await readerRef.current.cancel()
+        }
+        if (readerRef.current.releaseLock) {
+          await readerRef.current.releaseLock()
+        }
       } catch (error) {
         console.error('Error stopping reader:', error)
       }
       readerRef.current = null
     }
+    
+    // Remove Electron IPC listener
+    if (window.electronAPI) {
+      window.electronAPI.removeSerialDataListener()
+    }
+    
     setIsReading(false)
   }
 
@@ -80,10 +138,19 @@ function SerialMonitor({ port, isConnected, onData, data }) {
     if (!port || !isConnected) return
 
     try {
-      const writer = port.writable.getWriter()
-      const encoder = new TextEncoder()
-      await writer.write(encoder.encode(text))
-      writer.releaseLock()
+      if (window.electronAPI && port.connectionId) {
+        // Use Electron IPC
+        await window.electronAPI.serialSend({
+          connectionId: port.connectionId,
+          data: text
+        })
+      } else if (port.writable) {
+        // Use Web Serial API
+        const writer = port.writable.getWriter()
+        const encoder = new TextEncoder()
+        await writer.write(encoder.encode(text))
+        writer.releaseLock()
+      }
     } catch (error) {
       console.error('Serial write error:', error)
     }

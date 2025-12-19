@@ -2,14 +2,14 @@
   "name": "eblocks-companion-app",
   "version": "1.0.0",
   "description": "Companion app for E-Blocks 3 - Connect, upload code, and monitor serial output",
-  "main": "server/index.js",
+  "main": "electron/wrapper.cjs",
+  "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "cd server && nodemon index.js",
-    "dev:client": "cd client && npm run dev",
-    "build": "cd client && npm run build",
-    "start": "cd server && node index.js",
-    "install:all": "npm install && cd client && npm install && cd ../server && npm install"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron": "electron .",
+    "start": "npm run build && electron ."
   },
   "keywords": [
     "eblocks",
@@ -20,9 +20,19 @@
   ],
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "@serialport/parser-readline": "^13.0.0",
+    "axios": "^1.6.2",
+    "electron": "^39.2.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "serialport": "^12.0.0"
+  },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "nodemon": "^3.0.2"
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.8"
   }
 }
-

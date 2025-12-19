@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import './ArduinoCLIStatus.css'
 
 function ArduinoCLIStatus() {
@@ -11,12 +10,19 @@ function ArduinoCLIStatus() {
 
   const checkCLI = async () => {
     try {
-      const response = await axios.get('/api/check-cli')
+      let result
+      if (window.electronAPI) {
+        result = await window.electronAPI.checkCLI()
+      } else {
+        // Fallback for web version
+        const response = await fetch('/api/check-cli')
+        result = await response.json()
+      }
       setStatus({
         loading: false,
-        installed: response.data.installed,
-        error: response.data.error || null,
-        version: response.data.version || null
+        installed: result.installed,
+        error: result.error || null,
+        version: result.version || null
       })
     } catch (error) {
       setStatus({

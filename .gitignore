@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+dist-electron/
 .env
 *.log
 .DS_Store
@@ -11,4 +12,9 @@ server/node_modules/
 client/dist/
 server/uploads/
 server/temp/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
 
