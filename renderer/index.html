@@ -10,7 +10,9 @@
   <div class="app">
     <!-- Titlebar -->
     <header class="app-titlebar">
-      <div class="titlebar-icon"><img src="../assets/matrix.png" alt="Matrix Logo" /></div>
+      <div class="titlebar-icon">
+        <img src="/assets/matrix.png" alt="Matrix Logo" class="titlebar-logo">
+      </div>
       <div class="titlebar-title">E-Blocks 3 Companion</div>
     </header>
 
@@ -22,6 +24,10 @@
           <button class="sidebar-toggle" id="leftSidebarToggle" title="Collapse">←</button>
         </div>
         <div class="sidebar-content">
+          <!-- Board Image -->
+          <div class="board-image-container">
+            <img id="board-image" src="/assets/eblocks_Ard.png" alt="Selected Board" class="board-image">
+          </div>
           <!-- Setup Page -->
           <div class="setup-page">
             <div class="setup-section">
@@ -95,7 +101,7 @@
             <select id="editor-board-select" class="editor-board-select">
               <option value="arduino:avr:mega">Arduino Mega</option>
               <option value="esp32:esp32:esp32">ESP32</option>
-              <option value="pic">PIC</option>
+              <option value="pic" disabled>PIC (Not Available)</option>
             </select>
           </div>
           <div id="monaco-editor" class="editor-container"></div>
@@ -107,29 +113,6 @@
             </p>
           </div>
         </div>
-        
-        <!-- Serial Monitor (Horizontal below editor) -->
-        <div class="serial-monitor-horizontal">
-          <div class="monitor-header">
-            <h2>Serial Monitor</h2>
-            <div class="monitor-controls">
-              <button id="clear-monitor-btn" class="btn-sm btn-outline">Clear</button>
-              <label class="checkbox-label">
-                <input type="checkbox" id="autoscroll-checkbox" checked>
-                Auto-scroll
-              </label>
-            </div>
-          </div>
-          <div id="monitor-content" class="monitor-content">
-            <div class="monitor-empty">Waiting for serial data...</div>
-          </div>
-          <div class="monitor-input-section">
-            <form id="serial-send-form" class="monitor-input-form">
-              <input type="text" id="serial-input" class="monitor-input" placeholder="Send data...">
-              <button type="submit" class="btn-sm btn-outline btn-send">Send</button>
-            </form>
-          </div>
-        </div>
       </div>
 
       <!-- Right Sidebar -->
@@ -139,35 +122,26 @@
           <button class="sidebar-toggle" id="rightSidebarToggle" title="Collapse">→</button>
         </div>
         <div class="sidebar-content">
-          <!-- Tabs for Curriculum -->
-          <div class="sidebar-tabs">
-            <button class="tab-btn active" data-tab="curriculum">Curriculum</button>
-          </div>
-          
-          <!-- Curriculum Page -->
-          <div class="curriculum-page tab-content active" id="curriculum-tab">
-            <!-- Worksheet Viewer (shown when worksheet is selected) -->
-            <div id="worksheet-viewer" class="worksheet-viewer" style="display: none;">
-              <div class="worksheet-header">
-                <div class="worksheet-title-section">
-                  <h3 id="worksheet-viewer-title">Worksheet</h3>
-                  <span id="worksheet-viewer-code" class="worksheet-code"></span>
-                </div>
-                <button id="worksheet-close-btn" class="btn-sm btn-outline" title="Back to Curriculum">← Back</button>
-              </div>
-              <div id="worksheet-content" class="worksheet-content">
-                <!-- Worksheet content will be loaded here -->
+          <!-- Serial Monitor -->
+          <div class="serial-monitor">
+            <div class="monitor-header">
+              <h2>Serial Monitor</h2>
+              <div class="monitor-controls">
+                <button id="clear-monitor-btn" class="btn-sm btn-outline">Clear</button>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="autoscroll-checkbox" checked>
+                  Auto-scroll
+                </label>
               </div>
             </div>
-            
-            <!-- Curriculum List (shown by default) -->
-            <div id="curriculum-list" class="curriculum-list">
-              <div class="curriculum-header">
-                <h3>E-Blocks Curriculum</h3>
-              </div>
-              <div id="curriculum-content" class="curriculum-content">
-                <div class="curriculum-loading">Loading curriculum...</div>
-              </div>
+            <div id="monitor-content" class="monitor-content">
+              <div class="monitor-empty">Waiting for serial data...</div>
+            </div>
+            <div class="monitor-input-section">
+              <form id="serial-send-form" class="monitor-input-form">
+                <input type="text" id="serial-input" class="monitor-input" placeholder="Send data...">
+                <button type="submit" class="btn-sm btn-outline btn-send">Send</button>
+              </form>
             </div>
           </div>
         </div>
@@ -176,7 +150,7 @@
   </div>
 
   <!-- Load Monaco Editor -->
-  <script src="../node_modules/monaco-editor/min/vs/loader.js"></script>
+  <script src="/node_modules/monaco-editor/min/vs/loader.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
