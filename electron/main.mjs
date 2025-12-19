@@ -161,29 +161,36 @@ ipcMain.handle('upload-code', async (event, { code, board, port: portName }) => 
     return { success: false, error: 'No board specified' }
   }
 
-  // Ensure the port is not in use by our serial connection
-  const uploadPort = portName || 'auto'
-  if (uploadPort !== 'auto' && serialConnections.has(uploadPort)) {
-    console.log(`Port ${uploadPort} is in use, closing connection...`)
-    const connection = serialConnections.get(uploadPort)
-    serialConnections.delete(uploadPort)
-    serialDataBuffers.delete(uploadPort)
-    
+  // CRITICAL: Close ALL serial connections before upload
+  // Arduino CLI cannot access the port if ANY program has it open
+  console.log('Closing all serial connections before upload...')
+  for (const [port, connection] of serialConnections.entries()) {
     if (connection && connection.serialPort.isOpen) {
-      await new Promise((resolve) => {
-        connection.serialPort.close((error) => {
-          if (error) console.error('Close error:', error)
-          // Wait for port to be fully released by OS
-          setTimeout(resolve, 2000)
+      try {
+        await new Promise((resolve, reject) => {
+          connection.serialPort.close((error) => {
+            if (error) {
+              console.warn(`Warning closing ${port}:`, error.message)
+            }
+            resolve()
+          })
         })
-      })
+      } catch (error) {
+        console.warn(`Error closing ${port}:`, error)
+      }
     }
-    console.log(`Port ${uploadPort} released, proceeding with upload...`)
   }
+  serialConnections.clear()
+  serialDataBuffers.clear()
+
+  // Wait for OS to fully release the ports
+  await new Promise(resolve => setTimeout(resolve, 1500))
+  console.log('All serial ports closed and released')
 
   let arduinoCLI
   let sketchDir
   let sketchFile
+  let finalUploadPort = portName // Declare outside try block for error handling
 
   try {
     arduinoCLI = await findArduinoCLI()
@@ -220,7 +227,8 @@ ipcMain.handle('upload-code', async (event, { code, board, port: portName }) => 
       console.warn('Compile warnings:', compileResult.stderr)
     }
 
-    let finalUploadPort = uploadPort
+    // Determine upload port
+    finalUploadPort = portName
     if (!finalUploadPort || finalUploadPort === 'auto') {
       console.log('Port not specified or set to auto, detecting available ports...')
       const { stdout: portList } = await execAsync(`"${arduinoCLI}" board list`)
@@ -259,22 +267,68 @@ ipcMain.handle('upload-code', async (event, { code, board, port: portName }) => 
       }
     }
 
-    console.log(`Uploading to port: ${finalUploadPort}...`)
-    const uploadCommand = `"${arduinoCLI}" upload -p ${finalUploadPort} --fqbn ${board} "${sketchDir}"`
-    const uploadResult = await execAsync(uploadCommand, { timeout: 60000 })
+    // Verify port is still available
+    console.log(`Verifying port ${finalUploadPort} is available...`)
+    try {
+      const { stdout: verifyPortList } = await execAsync(`"${arduinoCLI}" board list`)
+      const portLines = verifyPortList.split('\n').slice(1)
+      const portFound = portLines.some(line => {
+        const portInLine = line.trim().split(/\s+/)[0]
+        return portInLine === finalUploadPort && !line.includes('Disconnected')
+      })
+      
+      if (!portFound) {
+        return {
+          success: false,
+          error: `Port ${finalUploadPort} not found or disconnected. Please check your device connection.`
+        }
+      }
+      console.log(`Port ${finalUploadPort} verified and available`)
+    } catch (verifyError) {
+      console.warn('Could not verify port, continuing anyway:', verifyError.message)
+    }
 
-    await rm(sketchDir, { recursive: true, force: true })
+    console.log(`Starting upload to port: ${finalUploadPort}...`)
+    // Quote the port name (required for Windows COM ports like COM8)
+    const uploadCommand = `"${arduinoCLI}" upload -p "${finalUploadPort}" --fqbn ${board} "${sketchDir}" -v`
+    console.log(`Executing upload command: ${uploadCommand}`)
+    console.log(`This may take 30-60 seconds. Please wait...`)
+    
+    try {
+      const uploadResult = await execAsync(uploadCommand, { 
+        timeout: 180000, // 3 minutes for upload
+        maxBuffer: 10 * 1024 * 1024 
+      })
+      
+      console.log('Upload stdout:', uploadResult.stdout)
+      if (uploadResult.stderr) {
+        console.log('Upload stderr:', uploadResult.stderr)
+      }
 
-    return { 
-      success: true, 
-      message: 'Code uploaded successfully',
-      port: finalUploadPort,
-      output: uploadResult.stdout
+      await rm(sketchDir, { recursive: true, force: true })
+
+      return { 
+        success: true, 
+        message: 'Code uploaded successfully',
+        port: finalUploadPort,
+        output: uploadResult.stdout || uploadResult.stderr || 'Upload completed'
+      }
+    } catch (uploadError) {
+      // Log the actual error details
+      console.error('Upload command failed:', uploadError)
+      console.error('Command was:', uploadCommand)
+      if (uploadError.stdout) {
+        console.error('Command stdout:', uploadError.stdout)
+      }
+      if (uploadError.stderr) {
+        console.error('Command stderr:', uploadError.stderr)
+      }
+      throw uploadError // Re-throw to be caught by outer catch
     }
 
   } catch (error) {
     console.error('Upload error:', error)
-    
+
     if (sketchDir) {
       try {
         await rm(sketchDir, { recursive: true, force: true })
@@ -284,15 +338,46 @@ ipcMain.handle('upload-code', async (event, { code, board, port: portName }) => 
     }
 
     let errorMessage = error.message || 'Upload failed'
-    if (error.stderr) {
-      errorMessage = error.stderr
+
+    // Check for specific error types
+    if (error.killed) {
+      errorMessage = 'Upload timeout - The upload process took too long (over 3 minutes). Please try again or check the device connection. You may need to press the reset button on your device.'
+    } else if (error.code === 'ENOENT') {
+      errorMessage = 'Arduino CLI not found. Please ensure Arduino CLI is installed.'
+    } else if (error.stderr) {
+      const stderr = error.stderr.toLowerCase()
+      const fullStderr = error.stderr
+      
+      if (stderr.includes('access is denied') || stderr.includes('permission denied')) {
+        errorMessage = 'Port access denied - Port may be in use by another program. Try disconnecting and reconnecting the device.'
+      } else if (stderr.includes('no device found on') || stderr.includes('could not find')) {
+        errorMessage = 'Device not found on port - Please verify the device is properly connected and the correct port is selected.'
+      } else if (stderr.includes('timeout') || stderr.includes('timed out')) {
+        errorMessage = 'Upload timeout - Device did not respond. Try pressing the reset button or reconnecting the device.'
+      } else if (stderr.includes('error') || stderr.includes('failed')) {
+        // Include the actual error message from Arduino CLI
+        errorMessage = `Upload failed: ${fullStderr.substring(0, 500)}` // Limit length
+      } else {
+        errorMessage = fullStderr || errorMessage
+      }
     } else if (error.stdout) {
-      errorMessage = error.stdout
+      // Sometimes Arduino CLI outputs errors to stdout
+      const stdout = error.stdout.toLowerCase()
+      if (stdout.includes('error') || stdout.includes('failed')) {
+        errorMessage = `Upload failed: ${error.stdout.substring(0, 500)}`
+      } else {
+        errorMessage = error.stdout
+      }
+    }
+    
+    // Add more context
+    if (errorMessage === 'Upload failed' || errorMessage === error.message) {
+      errorMessage += ` (Check console for details. Port: ${finalUploadPort || portName || 'unknown'})`
     }
 
-    return { 
-      success: false, 
-      error: errorMessage 
+    return {
+      success: false,
+      error: errorMessage
     }
   }
 })
@@ -344,7 +429,11 @@ ipcMain.handle('serial-connect', async (event, { port, baudRate = 115200 }) => {
 
     // Handle data
     parser.on('data', (data) => {
-      const dataString = data.toString()
+      const dataString = data.toString().trim()
+      if (!dataString) return // Skip empty lines
+      
+      console.log(`[Serial ${port}] Received:`, dataString)
+      
       // Store in buffer for polling
       if (!serialDataBuffers.has(port)) {
         serialDataBuffers.set(port, [])
@@ -357,6 +446,9 @@ ipcMain.handle('serial-connect', async (event, { port, baudRate = 115200 }) => {
       // Also send via IPC if window exists
       if (mainWindow) {
         mainWindow.webContents.send('serial-data', { port, data: dataString })
+        console.log(`[Serial ${port}] Sent to renderer:`, dataString)
+      } else {
+        console.warn(`[Serial ${port}] Main window not available, cannot send data`)
       }
     })
 
@@ -378,6 +470,9 @@ ipcMain.handle('serial-connect', async (event, { port, baudRate = 115200 }) => {
     })
 
     serialConnections.set(port, { serialPort, parser })
+    
+    console.log(`[Serial] Successfully connected to ${port} at ${baudRate} baud`)
+    console.log(`[Serial] Serial port is open:`, serialPort.isOpen)
 
     return { 
       success: true, 

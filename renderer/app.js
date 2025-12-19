@@ -216,7 +216,39 @@ async function uploadCode() {
       uploadBtn.textContent = 'Upload Code';
       showUploadStatus('success', result.message || 'Code uploaded successfully!');
       if (result.port) {
-        updateConnectionStatus(true, result.port);
+        // Update port dropdown to show the uploaded port
+        const portSelect = document.getElementById('com-port-select');
+        if (portSelect.value !== result.port) {
+          portSelect.value = result.port;
+        }
+        
+        // Wait a moment for device to reset after upload, then reconnect
+        showUploadStatus('info', 'Waiting for device to reset...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Reconnect to serial port for monitoring
+        try {
+          const baudRate = document.getElementById('baud-rate-select').value;
+          const connectResult = await window.electronAPI.serialConnect({ 
+            port: result.port, 
+            baudRate: parseInt(baudRate) || 115200 
+          });
+          
+          if (connectResult.success) {
+            updateConnectionStatus(true, result.port);
+            showUploadStatus('success', `Connected to ${result.port} - Serial monitor active`);
+            setTimeout(() => {
+              document.getElementById('upload-status').style.display = 'none';
+            }, 3000);
+          } else {
+            updateConnectionStatus(false);
+            showUploadStatus('warning', `Upload successful but couldn't reconnect: ${connectResult.error}`);
+          }
+        } catch (connectError) {
+          console.error('Reconnection error:', connectError);
+          updateConnectionStatus(false);
+          showUploadStatus('warning', 'Upload successful but serial monitor not connected');
+        }
       }
     } else {
       uploadBtn.textContent = 'Upload Code';
@@ -446,9 +478,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Listen for serial data from Electron
   if (window.electronAPI && window.electronAPI.onSerialData) {
     window.electronAPI.onSerialData((data) => {
-      if (data.data) {
+      console.log('Received serial data:', data);
+      if (data && data.data) {
         addSerialLine(data.data);
       }
     });
+  } else {
+    console.warn('Serial data listener not available');
   }
 });
