@@ -377,6 +377,37 @@ function setupResizer(resizerId, sidebarId) {
   });
 }
 
+// Auto-connect to selected port
+async function autoConnectToPort(portPath) {
+  if (!portPath) {
+    updateConnectionStatus(false);
+    return;
+  }
+
+  try {
+    updateConnectionStatus(false);
+    showUploadStatus('info', `Connecting to ${portPath}...`);
+
+    const baudRate = document.getElementById('baud-rate-select').value;
+    const result = await window.electronAPI.serialConnect({ port: portPath, baudRate });
+
+    if (result.success) {
+      updateConnectionStatus(true, portPath);
+      showUploadStatus('success', `Connected to ${portPath}`);
+      setTimeout(() => {
+        document.getElementById('upload-status').style.display = 'none';
+      }, 3000);
+    } else {
+      updateConnectionStatus(false);
+      showUploadStatus('error', result.error || 'Connection failed');
+    }
+  } catch (error) {
+    console.error('Connection error:', error);
+    updateConnectionStatus(false);
+    showUploadStatus('error', error.message || 'Connection failed');
+  }
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
   // Check Arduino CLI
@@ -397,6 +428,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('save-btn').addEventListener('click', saveCode);
   document.getElementById('load-btn').addEventListener('click', loadCode);
   document.getElementById('clear-monitor-btn').addEventListener('click', clearSerialMonitor);
+
+  // Auto-connect when COM port is selected
+  document.getElementById('com-port-select').addEventListener('change', (e) => {
+    autoConnectToPort(e.target.value);
+  });
 
   document.getElementById('serial-send-form').addEventListener('submit', (e) => {
     e.preventDefault();
