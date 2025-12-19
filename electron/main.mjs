@@ -502,23 +502,15 @@ async function createWindow() {
     })
   })
 
-  // Load the React app
+  // Load the HTML app
   if (app.isPackaged) {
     // In production, load from resources
-    const htmlPath = join(process.resourcesPath, 'dist/index.html')
+    const htmlPath = join(process.resourcesPath, 'renderer/index.html')
     mainWindow.loadFile(htmlPath)
   } else {
-    // In development, load built React app from root dist folder
-    const distPath = join(__dirname, '../dist/index.html')
-    const { access, constants } = await import('fs/promises')
-    try {
-      await access(distPath, constants.F_OK)
-      mainWindow.loadFile(distPath)
-    } catch {
-      console.error('React app not built. Please run: npm run build')
-      // Show error in window
-      mainWindow.loadURL('data:text/html,<h1>Please build the app first:</h1><pre>npm run build</pre>')
-    }
+    // In development, load from renderer folder
+    const htmlPath = join(__dirname, '../renderer/index.html')
+    mainWindow.loadFile(htmlPath)
   }
 
   // Disable application menu (no menu bar)

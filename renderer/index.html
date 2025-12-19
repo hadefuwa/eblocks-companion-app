@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Blocks 3 Companion</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Titlebar -->
+    <header class="app-titlebar">
+      <div class="titlebar-icon">⚡</div>
+      <div class="titlebar-title">E-Blocks 3 Companion</div>
+      <div class="titlebar-menu">
+        <div id="arduino-cli-status" class="cli-status">
+          <span class="status-dot"></span>
+          <span class="status-text">Checking Arduino CLI...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="app-container">
+      <!-- Left Sidebar -->
+      <div class="sidebar sidebar-left" id="leftSidebar">
+        <div class="sidebar-header">
+          <button class="sidebar-toggle" id="leftSidebarToggle" title="Collapse">←</button>
+        </div>
+        <div class="sidebar-content">
+          <!-- Setup Page -->
+          <div class="setup-page">
+            <div class="setup-section">
+              <div class="section-header">
+                <h3>Connection Setup</h3>
+              </div>
+              <div class="setup-item">
+                <label for="com-port-select">COM Port</label>
+                <div class="port-selector-group">
+                  <select id="com-port-select" class="port-select">
+                    <option value="">Select a port...</option>
+                  </select>
+                  <button id="refresh-ports-btn" class="btn-scan" title="Refresh ports">↻</button>
+                </div>
+              </div>
+              <div class="setup-item">
+                <label>Status</label>
+                <div class="status-indicator">
+                  <span class="status-dot" id="connection-status-dot"></span>
+                  <span class="status-text" id="connection-status-text">Not connected</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="setup-section">
+              <div class="section-header">
+                <h3>Board Configuration</h3>
+              </div>
+              <div class="setup-item">
+                <label for="board-type-select">Board Type</label>
+                <select id="board-type-select" class="board-select">
+                  <option value="arduino:avr:mega">Arduino Mega 2560</option>
+                  <option value="esp32:esp32:esp32">ESP32 Dev Module</option>
+                  <option value="arduino:avr:uno">Arduino Uno</option>
+                  <option value="arduino:avr:nano">Arduino Nano</option>
+                </select>
+              </div>
+              <div class="setup-item">
+                <label for="baud-rate-select">Baud Rate</label>
+                <select id="baud-rate-select" class="baud-select">
+                  <option value="9600">9600</option>
+                  <option value="19200">19200</option>
+                  <option value="38400">38400</option>
+                  <option value="57600">57600</option>
+                  <option value="115200" selected>115200</option>
+                  <option value="230400">230400</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setup-section">
+              <div class="section-header">
+                <h3>About</h3>
+              </div>
+              <div class="about-text">
+                <p>E-Blocks 3 Companion App</p>
+                <p class="version">Version 1.0.0</p>
+                <p class="description">
+                  Connect, program, and monitor your E-Blocks 3 devices with ease.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-resizer sidebar-resizer-left" id="leftResizer"></div>
+
+      <!-- Main Editor Area -->
+      <div class="app-main">
+        <div class="code-editor">
+          <div class="editor-header">
+            <h2>Code Editor</h2>
+            <div class="editor-actions">
+              <button id="load-btn" class="btn-sm btn-outline">Load</button>
+              <button id="save-btn" class="btn-sm btn-outline">Save</button>
+            </div>
+          </div>
+          <div class="board-selector">
+            <label for="editor-board-select">Board Type:</label>
+            <select id="editor-board-select" class="editor-board-select">
+              <option value="arduino:avr:mega">Arduino Mega</option>
+              <option value="esp32:esp32:esp32">ESP32 Dev Module</option>
+            </select>
+          </div>
+          <div id="monaco-editor" class="editor-container"></div>
+          <div id="upload-status" class="upload-status" style="display: none;"></div>
+          <div class="upload-actions">
+            <button id="upload-btn" class="btn-upload">Upload Code</button>
+            <p class="upload-note">
+              Note: If upload fails, try disconnecting and reconnecting the device.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div class="sidebar-resizer sidebar-resizer-right" id="rightResizer"></div>
+      <div class="sidebar sidebar-right" id="rightSidebar">
+        <div class="sidebar-header">
+          <button class="sidebar-toggle" id="rightSidebarToggle" title="Collapse">→</button>
+        </div>
+        <div class="sidebar-content">
+          <!-- Serial Monitor -->
+          <div class="serial-monitor">
+            <div class="monitor-header">
+              <h2>Serial Monitor</h2>
+              <div class="monitor-controls">
+                <button id="clear-monitor-btn" class="btn-sm btn-outline">Clear</button>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="autoscroll-checkbox" checked>
+                  Auto-scroll
+                </label>
+              </div>
+            </div>
+            <div id="monitor-content" class="monitor-content">
+              <div class="monitor-empty">Waiting for serial data...</div>
+            </div>
+            <div class="monitor-input-section">
+              <form id="serial-send-form" class="monitor-input-form">
+                <input type="text" id="serial-input" class="monitor-input" placeholder="Send data...">
+                <button type="submit" class="btn-sm btn-outline btn-send">Send</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Load Monaco Editor -->
+  <script src="../node_modules/monaco-editor/min/vs/loader.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
