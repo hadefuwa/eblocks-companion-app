@@ -505,19 +505,19 @@ async function createWindow() {
   // Load the React app
   if (app.isPackaged) {
     // In production, load from resources
-    const htmlPath = join(process.resourcesPath, 'client/dist/index.html')
+    const htmlPath = join(process.resourcesPath, 'dist/index.html')
     mainWindow.loadFile(htmlPath)
   } else {
-    // In development, try to load built React app, fallback to simple HTML
-    const devHtmlPath = join(__dirname, '../client/dist/index.html')
+    // In development, load built React app from root dist folder
+    const distPath = join(__dirname, '../dist/index.html')
     const { access, constants } = await import('fs/promises')
     try {
-      await access(devHtmlPath, constants.F_OK)
-      mainWindow.loadFile(devHtmlPath)
+      await access(distPath, constants.F_OK)
+      mainWindow.loadFile(distPath)
     } catch {
-      // Fallback to simple HTML if React app not built
-      const simpleHtmlPath = join(__dirname, '../index.html')
-      mainWindow.loadFile(simpleHtmlPath)
+      console.error('React app not built. Please run: npm run build')
+      // Show error in window
+      mainWindow.loadURL('data:text/html,<h1>Please build the app first:</h1><pre>npm run build</pre>')
     }
   }
 
