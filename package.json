@@ -1,8 +1,8 @@
 {
   "name": "eblocks-companion-app",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Companion app for E-Blocks 3 - Connect, upload code, and monitor serial output",
-  "main": "electron/wrapper.cjs",
+  "main": "src/wrapper.cjs",
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
@@ -39,8 +39,7 @@
       "output": "dist-electron"
     },
     "files": [
-      "electron/**/*",
-      "renderer/**/*",
+      "src/**/*",
       "assets/**/*",
       "resources/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",

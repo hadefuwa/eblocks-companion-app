@@ -150,6 +150,7 @@ body {
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
+  height: 100%;
 }
 
 /* Sidebar */
@@ -316,6 +317,46 @@ body {
   color: var(--vscode-text);
   font-size: 13px;
   cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.port-select.flash-warning {
+  animation: flashYellow 0.5s ease-in-out 3;
+  border-color: #ff9800;
+}
+
+@keyframes flashYellow {
+  0%, 100% {
+    background-color: var(--vscode-input-bg);
+    border-color: #ff9800;
+  }
+  50% {
+    background-color: rgba(255, 152, 0, 0.3);
+    border-color: #ff9800;
+  }
+}
+
+.port-warning {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 152, 0, 0.2);
+  border: 1px solid #ff9800;
+  border-radius: 3px;
+  color: #ff9800;
+  font-size: 12px;
+  font-weight: 500;
+  animation: flashText 0.5s ease-in-out 3;
+}
+
+@keyframes flashText {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
 }
 
 .btn-scan {
@@ -383,9 +424,9 @@ body {
   flex-direction: column;
   flex: 1;
   width: 100%;
-  height: 100%;
   min-height: 0;
   overflow: hidden;
+  border-bottom: 1px solid var(--vscode-border);
 }
 
 .editor-header {
@@ -527,10 +568,11 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
-  min-height: 0;
+  flex: 0 0 300px;
+  min-height: 250px;
   padding: 16px;
   overflow: hidden;
+  border-top: 1px solid var(--vscode-border);
 }
 
 .monitor-header {
@@ -622,4 +664,326 @@ body {
 .btn-send {
   padding: 6px 12px;
   white-space: nowrap;
+}
+
+/* Sidebar Tabs */
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--vscode-border);
+  background: var(--vscode-titlebar-bg);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.tab-btn:hover {
+  color: var(--vscode-text);
+  background: var(--vscode-input-bg);
+}
+
+.tab-btn.active {
+  color: var(--vscode-text);
+  border-bottom-color: var(--vscode-accent);
+  background: var(--vscode-panel-bg);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Curriculum Page */
+.curriculum-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.curriculum-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--vscode-border);
+  flex-shrink: 0;
+}
+
+.curriculum-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-text);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.curriculum-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.curriculum-loading {
+  text-align: center;
+  color: var(--vscode-text-secondary);
+  padding: 20px;
+}
+
+.curriculum-level {
+  background: var(--vscode-panel-bg);
+  border: 1px solid var(--vscode-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.curriculum-level-header {
+  padding: 12px 16px;
+  background: var(--vscode-titlebar-bg);
+  border-bottom: 1px solid var(--vscode-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.curriculum-level-header.bronze {
+  border-left: 4px solid #cd7f32;
+}
+
+.curriculum-level-header.silver {
+  border-left: 4px solid #c0c0c0;
+}
+
+.curriculum-level-header.gold {
+  border-left: 4px solid #ffd700;
+}
+
+.curriculum-level-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex: 1;
+}
+
+.curriculum-lessons {
+  padding: 8px;
+}
+
+.curriculum-lesson {
+  padding: 10px 12px;
+  margin: 4px 0;
+  background: var(--vscode-input-bg);
+  border: 1px solid var(--vscode-border);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.curriculum-lesson:hover {
+  background: var(--vscode-button-bg);
+  border-color: var(--vscode-accent);
+  transform: translateX(2px);
+}
+
+.curriculum-lesson.active {
+  background: var(--vscode-button-bg);
+  border-color: var(--vscode-accent);
+  border-left: 3px solid var(--vscode-accent);
+}
+
+.curriculum-lesson-number {
+  font-weight: 600;
+  color: var(--vscode-accent);
+  font-size: 12px;
+  min-width: 60px;
+}
+
+.curriculum-lesson-title {
+  flex: 1;
+  font-size: 12px;
+  color: var(--vscode-text);
+}
+
+.curriculum-lesson-code {
+  font-size: 11px;
+  color: var(--vscode-text-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+/* Worksheet Viewer */
+.worksheet-viewer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.curriculum-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+  height: 100%;
+}
+
+.worksheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--vscode-titlebar-bg);
+  border-bottom: 1px solid var(--vscode-border);
+  flex-shrink: 0;
+}
+
+.worksheet-title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.worksheet-title-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-text);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.worksheet-code {
+  font-size: 12px;
+  color: var(--vscode-text-secondary);
+  font-family: 'Courier New', monospace;
+  background: var(--vscode-input-bg);
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+
+.worksheet-content {
+  flex: 1 1 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  color: var(--vscode-text);
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  height: 0;
+}
+
+.worksheet-section {
+  margin-bottom: 24px;
+}
+
+.worksheet-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-accent);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.worksheet-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--vscode-text);
+  margin-bottom: 12px;
+}
+
+.worksheet-section p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--vscode-text);
+  margin-bottom: 8px;
+}
+
+.worksheet-list {
+  margin: 12px 0;
+  padding-left: 20px;
+}
+
+.worksheet-list li {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--vscode-text);
+  margin-bottom: 8px;
+}
+
+.worksheet-video {
+  margin: 12px 0;
+}
+
+.worksheet-video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--vscode-button-bg);
+  border-radius: 4px;
+  transition: background 0.2s;
+  font-size: 13px;
+  color: var(--vscode-text);
+  text-decoration: none;
+}
+
+.worksheet-video-link:hover {
+  background: var(--vscode-button-hover-bg);
+}
+
+.worksheet-video-link span {
+  font-size: 16px;
+}
+
+.worksheet-code-block {
+  background: var(--vscode-input-bg);
+  border: 1px solid var(--vscode-border);
+  border-radius: 4px;
+  padding: 16px;
+  margin: 12px 0;
+}
+
+.worksheet-code-block pre {
+  margin: 0 0 12px 0;
+  padding: 0;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--vscode-text);
+}
+
+.worksheet-code-block code {
+  font-family: 'Consolas', 'Courier New', monospace;
+  color: #d4d4d4;
+}
+
+.worksheet-load-code {
+  margin-top: 8px;
 }

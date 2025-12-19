@@ -42,6 +42,7 @@
                   </select>
                   <button id="refresh-ports-btn" class="btn-scan" title="Refresh ports">↻</button>
                 </div>
+                <div id="port-warning" class="port-warning" style="display: none;">No COM port selected</div>
               </div>
               <div class="setup-item">
                 <label>Status</label>
@@ -113,6 +114,29 @@
             </p>
           </div>
         </div>
+        
+        <!-- Serial Monitor (below code editor) -->
+        <div class="serial-monitor">
+          <div class="monitor-header">
+            <h2>Serial Monitor</h2>
+            <div class="monitor-controls">
+              <button id="clear-monitor-btn" class="btn-sm btn-outline">Clear</button>
+              <label class="checkbox-label">
+                <input type="checkbox" id="autoscroll-checkbox" checked>
+                Auto-scroll
+              </label>
+            </div>
+          </div>
+          <div id="monitor-content" class="monitor-content">
+            <div class="monitor-empty">Waiting for serial data...</div>
+          </div>
+          <div class="monitor-input-section">
+            <form id="serial-send-form" class="monitor-input-form">
+              <input type="text" id="serial-input" class="monitor-input" placeholder="Send data...">
+              <button type="submit" class="btn-sm btn-outline btn-send">Send</button>
+            </form>
+          </div>
+        </div>
       </div>
 
       <!-- Right Sidebar -->
@@ -122,26 +146,30 @@
           <button class="sidebar-toggle" id="rightSidebarToggle" title="Collapse">→</button>
         </div>
         <div class="sidebar-content">
-          <!-- Serial Monitor -->
-          <div class="serial-monitor">
-            <div class="monitor-header">
-              <h2>Serial Monitor</h2>
-              <div class="monitor-controls">
-                <button id="clear-monitor-btn" class="btn-sm btn-outline">Clear</button>
-                <label class="checkbox-label">
-                  <input type="checkbox" id="autoscroll-checkbox" checked>
-                  Auto-scroll
-                </label>
+          <!-- Curriculum Page -->
+          <div class="curriculum-page">
+            <!-- Worksheet Viewer (shown when worksheet is selected) -->
+            <div id="worksheet-viewer" class="worksheet-viewer" style="display: none;">
+              <div class="worksheet-header">
+                <div class="worksheet-title-section">
+                  <h3 id="worksheet-viewer-title">Worksheet</h3>
+                  <span id="worksheet-viewer-code" class="worksheet-code"></span>
+                </div>
+                <button id="worksheet-close-btn" class="btn-sm btn-outline" title="Back to Curriculum">← Back</button>
+              </div>
+              <div id="worksheet-content" class="worksheet-content">
+                <!-- Worksheet content will be loaded here -->
               </div>
             </div>
-            <div id="monitor-content" class="monitor-content">
-              <div class="monitor-empty">Waiting for serial data...</div>
-            </div>
-            <div class="monitor-input-section">
-              <form id="serial-send-form" class="monitor-input-form">
-                <input type="text" id="serial-input" class="monitor-input" placeholder="Send data...">
-                <button type="submit" class="btn-sm btn-outline btn-send">Send</button>
-              </form>
+            
+            <!-- Curriculum List (shown by default) -->
+            <div id="curriculum-list" class="curriculum-list">
+              <div class="curriculum-header">
+                <h3>E-Blocks Curriculum</h3>
+              </div>
+              <div id="curriculum-content" class="curriculum-content">
+                <div class="curriculum-loading">Loading curriculum...</div>
+              </div>
             </div>
           </div>
         </div>

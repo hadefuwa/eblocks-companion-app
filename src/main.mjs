@@ -46,7 +46,7 @@ async function startServer() {
   // Serve static files from renderer folder (development) or client/dist (packaged)
   const clientDistPath = app.isPackaged
     ? join(process.resourcesPath, 'client/dist')
-    : join(__dirname, '../renderer')
+    : join(__dirname, 'renderer')
   
   serverApp.use(express.static(clientDistPath))
   
@@ -66,10 +66,10 @@ async function startServer() {
   // Ensure temp directories exist
   const tempDir = app.isPackaged
     ? join(app.getPath('userData'), 'temp')
-    : join(__dirname, '../server/temp')
+    : join(app.getPath('temp'), 'eblocks-companion')
   const uploadsDir = app.isPackaged
     ? join(app.getPath('userData'), 'uploads')
-    : join(__dirname, '../server/uploads')
+    : join(app.getPath('temp'), 'eblocks-companion')
 
   await mkdir(tempDir, { recursive: true })
   await mkdir(uploadsDir, { recursive: true })
