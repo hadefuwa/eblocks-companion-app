@@ -87,7 +87,9 @@ let serialData = [];
 require.config({ paths: { vs: '../node_modules/monaco-editor/min/vs' } });
 
 require(['vs/editor/editor.main'], function () {
-  monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+  const editorContainer = document.getElementById('monaco-editor');
+
+  monacoEditor = monaco.editor.create(editorContainer, {
     value: DEFAULT_CODE,
     language: 'cpp',
     theme: 'vs-dark',
@@ -100,6 +102,20 @@ require(['vs/editor/editor.main'], function () {
     tabSize: 2,
     wordWrap: 'on',
   });
+
+  // Ensure editor resizes when window resizes
+  window.addEventListener('resize', () => {
+    if (monacoEditor) {
+      monacoEditor.layout();
+    }
+  });
+
+  // Force initial layout
+  setTimeout(() => {
+    if (monacoEditor) {
+      monacoEditor.layout();
+    }
+  }, 100);
 });
 
 // Check Arduino CLI status on load
@@ -182,24 +198,36 @@ async function uploadCode() {
     return;
   }
 
+  const uploadBtn = document.getElementById('upload-btn');
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = 'Compiling...';
   showUploadStatus('info', 'Compiling code...');
-  document.getElementById('upload-btn').disabled = true;
 
   try {
-    const result = await window.electronAPI.uploadCode({ code, board, port });
+    // Add a timeout wrapper
+    const uploadPromise = window.electronAPI.uploadCode({ code, board, port });
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Upload timeout - this may take a while for first-time uploads')), 180000) // 3 minute timeout
+    );
+
+    const result = await Promise.race([uploadPromise, timeoutPromise]);
 
     if (result.success) {
+      uploadBtn.textContent = 'Upload Code';
       showUploadStatus('success', result.message || 'Code uploaded successfully!');
       if (result.port) {
         updateConnectionStatus(true, result.port);
       }
     } else {
+      uploadBtn.textContent = 'Upload Code';
       showUploadStatus('error', result.error || 'Upload failed');
     }
   } catch (error) {
-    showUploadStatus('error', error.message || 'Upload failed');
+    uploadBtn.textContent = 'Upload Code';
+    console.error('Upload error:', error);
+    showUploadStatus('error', error.message || 'Upload failed - check console for details');
   } finally {
-    document.getElementById('upload-btn').disabled = false;
+    uploadBtn.disabled = false;
   }
 }
 
@@ -330,11 +358,22 @@ function setupResizer(resizerId, sidebarId) {
 
     if (newWidth >= 200 && newWidth <= 600) {
       sidebar.style.width = `${newWidth}px`;
+
+      // Trigger Monaco editor layout update
+      if (monacoEditor) {
+        monacoEditor.layout();
+      }
     }
   });
 
   document.addEventListener('mouseup', () => {
-    isResizing = false;
+    if (isResizing) {
+      isResizing = false;
+      // Final layout update after resize
+      if (monacoEditor) {
+        monacoEditor.layout();
+      }
+    }
   });
 }
 
