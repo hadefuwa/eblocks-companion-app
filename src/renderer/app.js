@@ -85,39 +85,81 @@ let detectedBoardFQBN = null; // Store the detected board FQBN from the connecte
 let portInfoMap = new Map(); // Map to store port information (port -> {fqbn, board})
 let serialData = [];
 
-// Initialize Monaco Editor
+// Initialize Monaco Editor - REQUIRED, app cannot function without it
+if (typeof require === 'undefined' || typeof require.config !== 'function') {
+  const errorMsg = 'CRITICAL ERROR: Monaco Editor is not available.\n\n' +
+                  'require is not defined or require.config is not a function.\n' +
+                  'The app cannot function without Monaco Editor.\n\n' +
+                  'Please check:\n' +
+                  '1. That loader.js loaded correctly\n' +
+                  '2. That node_modules/monaco-editor is accessible\n' +
+                  '3. Check the browser console for detailed errors';
+  alert(errorMsg);
+  console.error('Monaco Editor initialization failed: require is not available');
+  throw new Error('Monaco Editor is required but not available');
+}
+
 require.config({ paths: { vs: '/node_modules/monaco-editor/min/vs' } });
 
 require(['vs/editor/editor.main'], function () {
   const editorContainer = document.getElementById('monaco-editor');
+  
+  if (!editorContainer) {
+    const errorMsg = 'CRITICAL ERROR: Monaco Editor container not found.\n\n' +
+                    'The #monaco-editor element does not exist in the DOM.';
+    alert(errorMsg);
+    console.error('Monaco Editor container (#monaco-editor) not found');
+    throw new Error('Monaco Editor container not found');
+  }
 
-  monacoEditor = monaco.editor.create(editorContainer, {
-    value: DEFAULT_CODE,
-    language: 'cpp',
-    theme: 'vs-dark',
-    minimap: { enabled: true },
-    fontSize: 14,
-    lineNumbers: 'on',
-    roundedSelection: false,
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    tabSize: 2,
-    wordWrap: 'on',
-  });
+  try {
+    monacoEditor = monaco.editor.create(editorContainer, {
+      value: DEFAULT_CODE,
+      language: 'cpp',
+      theme: 'vs-dark',
+      minimap: { enabled: true },
+      fontSize: 14,
+      lineNumbers: 'on',
+      roundedSelection: false,
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+      tabSize: 2,
+      wordWrap: 'on',
+    });
 
-  // Ensure editor resizes when window resizes
-  window.addEventListener('resize', () => {
-    if (monacoEditor) {
-      monacoEditor.layout();
-    }
-  });
+    console.log('Monaco Editor initialized successfully');
 
-  // Force initial layout
-  setTimeout(() => {
-    if (monacoEditor) {
-      monacoEditor.layout();
-    }
-  }, 100);
+    // Ensure editor resizes when window resizes
+    window.addEventListener('resize', () => {
+      if (monacoEditor) {
+        monacoEditor.layout();
+      }
+    });
+
+    // Force initial layout
+    setTimeout(() => {
+      if (monacoEditor) {
+        monacoEditor.layout();
+      }
+    }, 100);
+  } catch (error) {
+    const errorMsg = 'CRITICAL ERROR: Failed to create Monaco Editor instance.\n\n' +
+                    'Error: ' + error.message + '\n\n' +
+                    'Check the console for details.';
+    alert(errorMsg);
+    console.error('Monaco Editor creation failed:', error);
+    throw error;
+  }
+}, function (error) {
+  const errorMsg = 'CRITICAL ERROR: Failed to load Monaco Editor main module.\n\n' +
+                  'Error: ' + (error.message || error) + '\n\n' +
+                  'This usually means:\n' +
+                  '1. The Monaco Editor files are not accessible\n' +
+                  '2. The path configuration is incorrect\n' +
+                  '3. Check the browser console and network tab for 404 errors';
+  alert(errorMsg);
+  console.error('Monaco Editor main module load failed:', error);
+  throw error;
 });
 
 // Check Arduino CLI status on load (removed from UI, but kept for logging)
@@ -3008,13 +3050,19 @@ function initTabs() {
   });
 }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize app - this runs regardless of Monaco Editor status
+function initializeApp() {
+  console.log('Initializing app...');
+  
   // Check Arduino CLI
   checkArduinoCLI();
   
   // Load curriculum UI (data is manually coded, no file parsing needed)
-  loadCurriculum();
+  try {
+    loadCurriculum();
+  } catch (error) {
+    console.error('Error loading curriculum:', error);
+  }
   
   // Worksheet close button
   const worksheetCloseBtn = document.getElementById('worksheet-close-btn');
@@ -3023,98 +3071,120 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Setup sidebars
-  setupSidebar('leftSidebar', 'leftSidebarToggle');
-  setupSidebar('rightSidebar', 'rightSidebarToggle');
-  setupResizer('leftResizer', 'leftSidebar');
-  setupResizer('rightResizer', 'rightSidebar');
+  try {
+    setupSidebar('leftSidebar', 'leftSidebarToggle');
+    setupSidebar('rightSidebar', 'rightSidebarToggle');
+    setupResizer('leftResizer', 'leftSidebar');
+    setupResizer('rightResizer', 'rightSidebar');
+  } catch (error) {
+    console.error('Error setting up sidebars:', error);
+  }
 
   // Refresh ports on load
-  refreshPorts();
+  try {
+    refreshPorts();
+  } catch (error) {
+    console.error('Error refreshing ports:', error);
+  }
 
   // Event listeners
-  document.getElementById('refresh-ports-btn').addEventListener('click', refreshPorts);
-  // Setup upload button - initially disabled until connection is established
-  const uploadBtn = document.getElementById('upload-btn');
-  if (uploadBtn) {
-    uploadBtn.disabled = true; // Disabled by default until board is connected
-    uploadBtn.addEventListener('click', (e) => {
-      if (uploadBtn.disabled) {
-        flashUploadWarning();
-        e.preventDefault();
-        return;
-      }
-      uploadCode();
-    });
+  try {
+    document.getElementById('refresh-ports-btn').addEventListener('click', refreshPorts);
     
-    // Add hover handler for disabled state
-    uploadBtn.addEventListener('mouseenter', () => {
-      if (uploadBtn.disabled) {
-        flashUploadWarning();
+    // Setup upload button - initially disabled until connection is established
+    const uploadBtn = document.getElementById('upload-btn');
+    if (uploadBtn) {
+      uploadBtn.disabled = true; // Disabled by default until board is connected
+      uploadBtn.addEventListener('click', (e) => {
+        if (uploadBtn.disabled) {
+          flashUploadWarning();
+          e.preventDefault();
+          return;
+        }
+        uploadCode();
+      });
+      
+      // Add hover handler for disabled state
+      uploadBtn.addEventListener('mouseenter', () => {
+        if (uploadBtn.disabled) {
+          flashUploadWarning();
+        }
+      });
+    }
+    
+    document.getElementById('save-btn').addEventListener('click', saveCode);
+    document.getElementById('load-btn').addEventListener('click', loadCode);
+    document.getElementById('clear-monitor-btn').addEventListener('click', clearSerialMonitor);
+
+    // Auto-connect when COM port is selected
+    document.getElementById('com-port-select').addEventListener('change', (e) => {
+      autoConnectToPort(e.target.value);
+    });
+
+    // Update board image when board type changes
+    document.getElementById('editor-board-select').addEventListener('change', updateBoardImage);
+    
+    // Initialize board image on load
+    updateBoardImage();
+    
+    // Initialize board image with disconnected state (red glow)
+    const boardImage = document.getElementById('board-image');
+    if (boardImage) {
+      boardImage.classList.add('disconnected');
+    }
+
+    document.getElementById('serial-send-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('serial-input');
+      if (input.value.trim()) {
+        sendSerialData(input.value);
+        input.value = '';
       }
     });
+  } catch (error) {
+    console.error('Error setting up event listeners:', error);
   }
-  document.getElementById('save-btn').addEventListener('click', saveCode);
-  document.getElementById('load-btn').addEventListener('click', loadCode);
-  document.getElementById('clear-monitor-btn').addEventListener('click', clearSerialMonitor);
+}
 
-  // Auto-connect when COM port is selected
-  document.getElementById('com-port-select').addEventListener('change', (e) => {
-    autoConnectToPort(e.target.value);
-  });
-
-  // Update board image when board type changes
-  document.getElementById('editor-board-select').addEventListener('change', updateBoardImage);
-  
-  // Initialize board image on load
-  updateBoardImage();
-  
-  // Initialize board image with disconnected state (red glow)
-  const boardImage = document.getElementById('board-image');
-  if (boardImage) {
-    boardImage.classList.add('disconnected');
+// Poll for serial data from the server
+let serialPollInterval = null;
+function startSerialPolling(connectionId) {
+  if (serialPollInterval) {
+    clearInterval(serialPollInterval);
   }
-
-  document.getElementById('serial-send-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const input = document.getElementById('serial-input');
-    if (input.value.trim()) {
-      sendSerialData(input.value);
-      input.value = '';
-    }
-  });
-
-  // Poll for serial data from the server
-  let serialPollInterval = null;
-  function startSerialPolling(connectionId) {
-    if (serialPollInterval) {
-      clearInterval(serialPollInterval);
-    }
-    serialPollInterval = setInterval(async () => {
-      if (connectionId && isConnected) {
-        try {
-          const response = await fetch(`/api/serial/data/${connectionId}`);
-          const result = await response.json();
-          if (result.success && result.data && result.data.length > 0) {
-            result.data.forEach(data => {
-              addSerialLine(data);
-            });
-          }
-        } catch (error) {
-          console.error('Error polling serial data:', error);
+  serialPollInterval = setInterval(async () => {
+    if (connectionId && isConnected) {
+      try {
+        const response = await fetch(`/api/serial/data/${connectionId}`);
+        const result = await response.json();
+        if (result.success && result.data && result.data.length > 0) {
+          result.data.forEach(data => {
+            addSerialLine(data);
+          });
         }
+      } catch (error) {
+        console.error('Error polling serial data:', error);
       }
-    }, 100); // Poll every 100ms
-  }
-  
-  function stopSerialPolling() {
-    if (serialPollInterval) {
-      clearInterval(serialPollInterval);
-      serialPollInterval = null;
     }
+  }, 100); // Poll every 100ms
+}
+
+function stopSerialPolling() {
+  if (serialPollInterval) {
+    clearInterval(serialPollInterval);
+    serialPollInterval = null;
   }
-  
-  // Start polling when connected
-  // This will be called from autoConnectToPort
-  window.startSerialPolling = startSerialPolling;
-  window.stopSerialPolling = stopSerialPolling;
-});
+}
+
+// Start polling when connected
+// This will be called from autoConnectToPort
+window.startSerialPolling = startSerialPolling;
+window.stopSerialPolling = stopSerialPolling;
+
+// Initialize app when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  // DOM already loaded, initialize immediately
+  initializeApp();
+}

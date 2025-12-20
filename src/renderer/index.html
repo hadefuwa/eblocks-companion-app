@@ -174,8 +174,64 @@
     </main>
   </div>
 
-  <!-- Load Monaco Editor -->
+  <!-- Load Monaco Editor - REQUIRED for app to function -->
   <script src="/node_modules/monaco-editor/min/vs/loader.js"></script>
-  <script src="app.js"></script>
+  <script>
+    // Wait for Monaco Editor loader to be available - fail fast if it doesn't load
+    (function() {
+      let retryCount = 0;
+      const maxRetries = 200; // 10 seconds max wait
+      const loaderTimeout = setTimeout(() => {
+        const errorMsg = 'CRITICAL ERROR: Monaco Editor failed to load. The app cannot function without it.\n\n' +
+                        'This usually means:\n' +
+                        '1. The node_modules path is incorrect in the packaged app\n' +
+                        '2. Monaco Editor files are not being served correctly\n' +
+                        '3. Check the console for detailed error messages';
+        alert(errorMsg);
+        console.error('Monaco Editor loader.js failed to load after', maxRetries * 50, 'ms');
+        console.error('Loader script src:', '/node_modules/monaco-editor/min/vs/loader.js');
+        console.error('Current location:', window.location.href);
+        // Don't exit - let user see the error
+      }, maxRetries * 50);
+      
+      function checkAndLoadApp() {
+        if (typeof require !== 'undefined' && typeof require.config === 'function') {
+          clearTimeout(loaderTimeout);
+          console.log('Monaco Editor loader.js loaded successfully');
+          
+          // Load app.js
+          const appScript = document.createElement('script');
+          appScript.src = 'app.js';
+          appScript.onload = () => {
+            console.log('app.js loaded successfully');
+          };
+          appScript.onerror = () => {
+            const errorMsg = 'CRITICAL ERROR: Failed to load app.js\n\nCheck the console for details.';
+            alert(errorMsg);
+            console.error('Failed to load app.js from:', appScript.src);
+          };
+          document.body.appendChild(appScript);
+        } else if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(checkAndLoadApp, 50);
+        } else {
+          clearTimeout(loaderTimeout);
+          const errorMsg = 'CRITICAL ERROR: Monaco Editor require() function not available after loading loader.js\n\n' +
+                          'This indicates a problem with the Monaco Editor installation or path configuration.';
+          alert(errorMsg);
+          console.error('require.config not available after', maxRetries * 50, 'ms');
+        }
+      }
+      
+      // Start checking after DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(checkAndLoadApp, 100); // Give loader.js a moment to initialize
+        });
+      } else {
+        setTimeout(checkAndLoadApp, 100);
+      }
+    })();
+  </script>
 </body>
 </html>

@@ -19,6 +19,7 @@ import cors from 'cors'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { writeFile, mkdir, rm } from 'fs/promises'
+import { existsSync } from 'fs'
 import { SerialPort } from 'serialport'
 import { ReadlineParser } from '@serialport/parser-readline'
 
@@ -43,25 +44,85 @@ async function startServer() {
   serverApp.use(cors())
   serverApp.use(express.json({ limit: '10mb' }))
   
-  // Serve static files from renderer folder (development) or client/dist (packaged)
-  const clientDistPath = app.isPackaged
-    ? join(process.resourcesPath, 'client/dist')
-    : join(__dirname, 'renderer')
+  // Serve static files from renderer folder (development or packaged)
+  // 
+  // ELECTRON-BUILDER PATH STRUCTURE:
+  // - In packaged app: Files go into app.asar (packed) or app.asar.unpacked (unpacked)
+  // - app.getAppPath() returns: path to app.asar file (if asar enabled) or app directory
+  // - process.resourcesPath returns: path to resources/ folder
+  // - __dirname in main.mjs: points to where main.mjs is (inside app.asar or unpacked)
+  // - Unpacked files: go to process.resourcesPath/app.asar.unpacked/ maintaining source structure
+  //
+  // So if source is: src/renderer/index.html
+  // Unpacked location: process.resourcesPath/app.asar.unpacked/src/renderer/index.html
+  // __dirname would be: process.resourcesPath/app.asar.unpacked/src (if main.mjs unpacked)
+  //                     OR app.asar/src (if main.mjs packed)
   
-  serverApp.use(express.static(clientDistPath))
+  let clientDistPath, assetsPath, nodeModulesPath;
   
-  // Serve assets folder
-  const assetsPath = app.isPackaged
-    ? join(process.resourcesPath, 'assets')
-    : join(__dirname, '../assets')
-  
-  serverApp.use('/assets', express.static(assetsPath))
-  
-  // Serve node_modules for Monaco Editor (development only)
-  if (!app.isPackaged) {
-    const nodeModulesPath = join(__dirname, '../node_modules')
-    serverApp.use('/node_modules', express.static(nodeModulesPath))
+  if (app.isPackaged) {
+    const appPath = app.getAppPath(); // Path to app.asar or app directory
+    const resourcesPath = process.resourcesPath; // Path to resources/ folder
+    const unpackedBase = join(resourcesPath, 'app.asar.unpacked');
+    
+    console.log('=== PACKAGED APP PATH DEBUG ===');
+    console.log('app.getAppPath():', appPath);
+    console.log('process.resourcesPath:', resourcesPath);
+    console.log('__dirname:', __dirname);
+    console.log('Unpacked base:', unpackedBase);
+    
+    // For unpacked files, they're at: resources/app.asar.unpacked/src/renderer/
+    // The structure mirrors the source structure
+    clientDistPath = join(unpackedBase, 'src', 'renderer');
+    assetsPath = join(unpackedBase, 'assets');
+    nodeModulesPath = join(unpackedBase, 'node_modules');
+    
+    // Verify and log
+    console.log('Renderer path:', clientDistPath, 'exists:', existsSync(clientDistPath));
+    console.log('Assets path:', assetsPath, 'exists:', existsSync(assetsPath));
+    console.log('Node modules path:', nodeModulesPath, 'exists:', existsSync(nodeModulesPath));
+    
+    // If unpacked paths don't exist, try app.asar paths (files might be packed)
+    if (!existsSync(clientDistPath)) {
+      console.warn('Unpacked renderer not found, trying app.asar path');
+      clientDistPath = join(appPath, 'src', 'renderer');
+      // If appPath points to app.asar file, we can't read from it directly
+      // So we need to use the unpacked path
+      if (!existsSync(clientDistPath)) {
+        console.error('ERROR: Cannot find renderer files!');
+        console.error('Tried:', join(unpackedBase, 'src', 'renderer'));
+        console.error('Tried:', clientDistPath);
+      }
+    }
+    
+    if (!existsSync(assetsPath)) {
+      console.warn('Unpacked assets not found, trying app.asar path');
+      assetsPath = join(appPath, 'assets');
+    }
+    
+    if (!existsSync(nodeModulesPath)) {
+      console.warn('Unpacked node_modules not found, trying app.asar path');
+      nodeModulesPath = join(appPath, 'node_modules');
+      if (!existsSync(nodeModulesPath)) {
+        console.error('ERROR: Cannot find node_modules! Monaco Editor will not work!');
+        console.error('Tried:', join(unpackedBase, 'node_modules'));
+        console.error('Tried:', nodeModulesPath);
+      }
+    }
+  } else {
+    // Development paths - relative to __dirname (which is src/)
+    clientDistPath = join(__dirname, 'renderer');
+    assetsPath = join(__dirname, '..', 'assets');
+    nodeModulesPath = join(__dirname, '..', 'node_modules');
+    console.log('=== DEVELOPMENT PATHS ===');
+    console.log('Renderer:', clientDistPath);
+    console.log('Assets:', assetsPath);
+    console.log('Node modules:', nodeModulesPath);
   }
+  
+  serverApp.use(express.static(clientDistPath));
+  serverApp.use('/assets', express.static(assetsPath));
+  serverApp.use('/node_modules', express.static(nodeModulesPath));
 
   // Ensure temp directories exist
   const tempDir = app.isPackaged
@@ -150,7 +211,52 @@ async function startServer() {
   serverApp.get('/api/ports', async (req, res) => {
     try {
       const arduinoCLI = await findArduinoCLI()
-      const { stdout } = await execAsync(`"${arduinoCLI}" board list`)
+      if (!arduinoCLI) {
+        console.warn('Arduino CLI not found - using SerialPort.list() as fallback')
+        // Still return ports from SerialPort.list() even if Arduino CLI is not available
+        try {
+          const portList = await SerialPort.list()
+          console.log('Found', portList.length, 'ports via SerialPort.list()')
+          const ports = portList.map(port => {
+            // Try to detect board type from USB info
+            let detectedFQBN = null
+            const vendorId = (port.vendorId || '').toUpperCase()
+            const productId = (port.productId || '').toUpperCase()
+            
+            // E-Blocks detection
+            if (vendorId === '12BF' && productId === '0030') {
+              detectedFQBN = 'arduino:avr:mega'
+              console.log('Detected E-Blocks Arduino Mega from VID/PID:', vendorId, productId)
+            }
+            
+            return {
+              port: port.path,
+              board: port.friendlyName || port.manufacturer || 'Unknown',
+              fqbn: detectedFQBN,
+              usbInfo: {
+                vendorId: port.vendorId,
+                productId: port.productId,
+                manufacturer: port.manufacturer,
+                product: port.product,
+                pnpId: port.pnpId,
+                serialNumber: port.serialNumber,
+                friendlyName: port.friendlyName
+              }
+            }
+          })
+          return res.json({ success: true, ports })
+        } catch (serialError) {
+          console.error('Error getting ports from SerialPort:', serialError)
+          console.error('SerialPort error stack:', serialError.stack)
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Failed to get serial ports: ' + serialError.message 
+          })
+        }
+      }
+      
+      console.log('Using Arduino CLI:', arduinoCLI)
+      const { stdout } = await execAsync(`"${arduinoCLI}" board list`, { timeout: 10000 })
       
       const ports = []
       const lines = stdout.split('\n').slice(1)
@@ -284,10 +390,53 @@ async function startServer() {
       res.json({ success: true, ports })
     } catch (error) {
       console.error('Error getting ports:', error)
-      res.status(500).json({ 
-        success: false, 
-        error: error.message || 'Failed to get serial ports' 
-      })
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+      
+      // Try to fallback to SerialPort.list() if Arduino CLI fails
+      try {
+        console.log('Falling back to SerialPort.list() due to error:', error.message)
+        const portList = await SerialPort.list()
+        console.log('Found', portList.length, 'ports via SerialPort.list() fallback')
+        const ports = portList.map(port => {
+          // Try to detect board type from USB info
+          let detectedFQBN = null
+          const vendorId = (port.vendorId || '').toUpperCase()
+          const productId = (port.productId || '').toUpperCase()
+          
+          // E-Blocks detection
+          if (vendorId === '12BF' && productId === '0030') {
+            detectedFQBN = 'arduino:avr:mega'
+            console.log('Detected E-Blocks Arduino Mega from VID/PID:', vendorId, productId)
+          }
+          
+          return {
+            port: port.path,
+            board: port.friendlyName || port.manufacturer || 'Unknown',
+            fqbn: detectedFQBN,
+            usbInfo: {
+              vendorId: port.vendorId,
+              productId: port.productId,
+              manufacturer: port.manufacturer,
+              product: port.product,
+              pnpId: port.pnpId,
+              serialNumber: port.serialNumber,
+              friendlyName: port.friendlyName
+            }
+          }
+        })
+        console.log('Fallback successful, returning', ports.length, 'ports')
+        return res.json({ success: true, ports })
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError)
+        console.error('Fallback error stack:', fallbackError.stack)
+        res.status(500).json({ 
+          success: false, 
+          error: error.message || 'Failed to get serial ports',
+          fallbackError: fallbackError.message,
+          details: error.stack
+        })
+      }
     }
   })
 

@@ -1,6 +1,6 @@
 {
   "name": "eblocks-companion-app",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Companion app for E-Blocks 3 - Connect, upload code, and monitor serial output",
   "main": "src/wrapper.cjs",
   "scripts": {
@@ -42,6 +42,8 @@
       "src/**/*",
       "assets/**/*",
       "resources/**/*",
+      "package.json",
+      "node_modules/monaco-editor/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
       "!**/node_modules/*.d.ts",
@@ -76,6 +78,11 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
-    }
+    },
+    "asarUnpack": [
+      "src/renderer/**/*",
+      "assets/**/*",
+      "node_modules/monaco-editor/**/*"
+    ]
   }
 }
