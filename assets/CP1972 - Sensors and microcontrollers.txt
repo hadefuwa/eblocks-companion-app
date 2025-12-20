@@ -1,0 +1,375 @@
+
+Contents
+Sensors and
+microcontrollers
+Pass
+Worksheet 1 		Analogue inputs
+Worksheet 2		Light sensor
+Worksheet 3 		Analogue temperature sensor
+Worksheet 4		Digital temperature sensor
+Worksheet 5		Digital accelerometer
+
+Pass +
+Worksheet 6		Floats and ints
+
+Distinction		Any one of the following mechanical sensor projects:
+
+Additional worksheets for mechanical sensors. These can be worksheets or projects.
+Worksheet 7		Thermocouple
+Worksheet 8		Flow sensor
+Worksheet 9		Compressive force sensor
+Worksheet 10		Strain sensor
+Worksheet 11		Pressure sensor
+
+Teacher’s notes
+
+
+
+
+
+Preparation
+Sensors and
+microcontrollers
+Before tackling the worksheets you will need to understand some basic information:
+Microcontroller basics
+This document gives a basic explanation as to how microcontrollers work.
+Introduction to E-blocks
+This document explains how the E-blocks system works.
+E-blocks datasheet
+This document gives the full schematics of all the E-blocks 3 circuit boards.
+Flowcode Embedded getting started guide
+This document shows you how to construct your first program from scratch.
+You will also have had to complete the first part of the Introduction to Microcontrollers course.
+
+
+
+Worksheet 1
+Analogue inputs
+CP1972-1Sensors and
+microcontrollers
+Computers work in 1’s and 0’s – the digital world. Sometimes we need to convert a varying voltage into a format a microcontroller can understand. For example: the voltage on a potentiometer on a radio, or from a sensor. We need to convert an analogue signal into a digital value.  
+
+In this worksheet you explore this with a simple potentiometer.
+
+
+
+https://youtu.be/HPHHLHAWRVM
+Over to you:
+* Watch the video “Analogue inputs” on the Flowcode YouTube site. 
+* Load the file “Analogue inputs". Place the combo board on Ports A/B and the analogue sensor board on Port F. 
+* The program displays the reading on an analogue port from 0 to 255 based on the supply voltage on microcontroller board.
+Challenge:
+* Modify the program so that it displays the potentiometer voltage on the display
+* Modify the program so that a LED comes on when the voltage input is more than 1V.
+Hints:
+1. Set up a new variable – POTVOLT - with Type Float
+2. Use the GetVoltage macro to read the potentiometer input as a voltage into POTVOLT
+3. Use an IF icon to test POTVOLT – make sure you use ‘1.0’ as a comparison not ‘1’ to make sure the floating point operator works properly.
+4. Use the PRINTFLOAT macro on the LCD component
+5. 
+
+Worksheet 2
+Light sensor
+CP1972-2Sensors and
+microcontrollers
+The output voltage from a light sensor either gets higher with more light, or lower. This allows us to detect the light level so that we know when to turn street lights on and off.
+
+In this example you investigate the light level and make an adjustable light switch. 
+
+There is no video for this example.
+
+Over to you:
+* Load the file “Light sensor". Set up the hardware appropriately. 
+* The program reads the value of the light sensor and displays it as a number on the LCD.
+* Shine a mobile phone light or a torch on the sensor to establish what the numerical range of the sensors is.
+Challenge:
+* Make an electronic light switch that turns a LED off when the light level goes high. 
+* Add a potentiometer to your program which adjusts the light level at which the switch is made.
+Hints:
+
+1. Add a variable LightLevel and read the light sensor value into this variable
+2. In the Main loop use an IF icon to compare LightLevel to the light sensor input. Alter the LED output accordingly.
+3. Use two lines on the LCD display to show light input level, LightLevel, and to make sure your program is working. 
+
+
+
+Worksheet 3
+Analogue temperature sensor
+CP1972-3Sensors and
+microcontrollers
+A thermistor’s resistance varies with temperature. This means that you can use a simple voltage divider to measure temperature. One difficulty here is that the variation of resistance with temperature is not linear, so the program needs to take this into account. Flowcode does this for you in the thermistor component
+
+In this example you develop a simple temperature measuring system. 
+
+
+
+https://youtu.be/rI4F64wz6Lk
+Over to you:
+* Load the file “Thermistor". Set up the hardware appropriately. 
+* The program reads the value of the temperature and displays it as a number on the LCD.
+* Using your fingers touch the sensor and see what the variation is. You can breathe on it as well.
+Challenge:
+* Make an electronic temperature sensor that turns a LED on when the temperature reaches a set level. 
+* Alter the program so that the LCD displays the switch temperature as well as the actual temperature.
+Hints:
+1. Add a variable SwitchTemp and read the Temperature value into this variable
+2. In the Main loop use an IF icon to compare SwitchTemp to the temperature sensor input. Alter the LED output accordingly.
+
+
+
+Worksheet 4
+Digital temperature sensor
+CP1972-4Sensors and
+microcontrollers
+Analogue temperature sensors are very cheap, very easy to use, but very inaccurate. Accurate digital temperature sensors chips are very precise but require a little more programming technique.
+
+In this worksheet you investigate the use of a digital temperature sensor which uses serial communication to transfer information. 
+
+
+
+https://youtu.be/7r7SHiJQJMA
+Over to you:
+* Watch the video “Dig Temp sensor on the Flowcode YouTube site. 
+* Load the file “Dig Temp sensor “. Set up the hardware appropriately.
+* The program shows the temperature of the digital temperature sensor on the LCD.
+Challenge:
+* Place your finger on top of the sensor and observe how the temperature reading changes.
+* The sensor also measures humidity. Modify the program so that it measures humidity and prints it on the display.
+Hints:
+1. Add a variable HUMINT (of Type INT) and read the humidity value into this variable using the GetHumidityInt macro
+2. Set the cursor to a new line and print the value of HUMINT
+Challenge:
+* Load the file “Temp plot". Set up the hardware appropriately. 
+* The program reads the value of the temperature and displays it as a number and as a graph on the Graphical display.
+* Using your routines from the previous task modify the program so that the display has a circle on it that varies in colour with the temperature. Use Green for ‘ok’, amber for ‘medium’ temperature and red for ‘too hot’. Make a choice about what the temperature values are for each.
+* Alter the program so that a LED output also comes on when the temperature is too hot.
+Hints:
+1. Use the SetForegroundColour to alter the colour on the Graphical LCD
+2. Use the DrawCircle component macro to create the circle.
+3. Draw over the circle to change its colour.
+
+Worksheet 5
+Digital accelerometer
+CP1972-5Sensors and
+microcontrollers
+Digital accelerometer chips are used in software to measure the orientation of a device – like the digital level software on your mobile phone. These serial devices give out data on the X, Y, Z orientation of the chip.
+
+In this worksheet you investigate a typical digital accelerometer.
+
+
+
+There is no video for this worksheet.
+
+Over to you:
+* Load the file “Accelerometer". Set up the hardware appropriately. 
+* The program shows the X,Y, Z values of acceleration
+Challenge:
+* Modify the program to make a system that shows the board is level in the X plane. 
+* Modify the text output so that it also displays the angle of the board.
+Hints:
+1. Use Graphical display macros to draw a background rectangle for the level at the bottom of the screen
+2. Use the DrawCircle command to draw a circle representing the level air bubble. The circle is in the centre of the rectangle when the device is level and it at either end when the board is at 90 degrees.
+3. Use a new variable XInt which is type Integer.
+4. Use the calculation command XIntNew = XFloat * 200 + 200 to turn the Float value XFloat into an integer that can be used in the Graphical Display DrawCircle macro. 
+5. Use another variable XIntOld to track the old X value. Draw a black circle over the old X position to ‘wipe’ that portion of the display.
+For a further challenge:
+* Extend this program so that it shows the level in X as well as Y
+Hints:
+1. In the CollectXYZDataFloat command use an Axis value of 1 for the Y axis and 2 for the Z axis.
+
+
+Worksheet 6
+Floats and Ints
+CP1972-6Sensors and
+microcontrollers
+As you start to measure real world quantities you will need to understand how to manipulate numbers outside the range of a single byte: 0 to 255. 
+
+Variables of type INT have a range of -32768 to + 32767. Floating point numbers allow you to manipulate numbers with decimal points.
+
+There is no video for this worksheet.
+
+Over to you:
+* Load the file “Floats and ints". Set up the hardware appropriately. 
+* The program shows how Floats and Ints are used in programs.
+* Make sure you read the comments thoroughly, so you understand how to use these new types of variables.
+Challenge:
+* Use the BL0144 temperature and humidity sensor to make a small weather station with the following properties:
+o A display of temperature, and humidity to 2 decimal places. Temperature range -10C to +40C. Humidity from 0% to 100%.
+o A graph showing temperature variation over time – refreshing every 24 hours. 
+o A clock
+
+Hints:
+1. Review the worksheets in Introduction to microcontrollers where you will find examples of graphs and graphical displays, and touchable buttons for graphical displays.
+2. Review the worksheets in Introduction to microcontrollers where you will find information on timer interrupts.
+
+
+
+Worksheet 7
+Thermocouples
+CP1972-7Sensors and
+microcontrollersThermocouples are often used for measuring temperature in industrial processes. They are not as accurate as some modern chips – but they have a much greater range – up to 2,500C.
+
+In this worksheet / project you learn how to use a thermocouple to make a temperature control system. 
+There is no video for this worksheet.
+
+Over to you:
+* Load the file “BL0126 Thermocouple". Set up the hardware appropriately. 
+* Make sure you understand how the program works
+Challenge:
+* Modify the program to make a heating controller which includes the following features:
+o A display of temperature, set temperature and heater status
+o A graph showing temperature variation over time – refreshing every 30 minutes. Temperature range 15C to 30C.
+o An LED that lights up when the target temperature is over run 
+o A way of altering the set temperature with either switches or graphical display touch areas ‘+’ and ‘-‘.
+
+Hints:
+1. Review the worksheets in Introduction to microcontrollers where you will find examples of graphs and graphical displays, and touchable buttons for graphical displays.
+
+Worksheet 8
+Flow sensors
+CP1972-8Sensors and
+microcontrollers
+Flow rate sensors are everywhere: from petrol pumps, to drug delivery systems to water meters and industrial processors. At the heart of them all is a flow rate sensor.
+
+In this worksheet / project you learn how flow rate sensors work and use one to make a water flow regulator. 
+
+
+There is no video for this worksheet.
+
+Over to you:
+* Load the file “BL0121 Flow". Set up the hardware appropriately. 
+* Make sure you understand how the program works. To start with you can blow through the sensor to make sure it works. 
+Challenge:
+* Make a mechanical rig that allows fluid or air to pass through the sensor. You may need a pump, a tank and appropriate pipes. You will need to use the Power board and power supply to activate a 12 or 24V pump.
+* Modify the program to make a water flow regulator and meter with the following characteristics:
+o Microcontroller system, sensor, tank, pump, pipes
+o A display of flow rate, set flow rate and pump status
+o A graph showing flow rate variation over time – refreshing every 30 minutes. Temperature range 15C to 30C.
+o An LED that lights up when the target flow rate is over run 
+o A way of altering the set flow rate with either switches or graphical display touch areas ‘+’ and ‘-‘.
+Hints:
+1. There is a worksheet in Microcontrollers and motors where you can learn how to use the BL0110 Power board. 
+2. Review the worksheets in Introduction to microcontrollers where you will find examples of graphs and graphical displays, and touchable buttons for graphical displays.
+
+Worksheet 9
+Compressive force sensors
+CP1972-9Sensors and
+microcontrollers
+Force sensors are used with some mechanical attachment for measuring weight.
+
+In this worksheet / project you learn how compressive force sensors are used to measure weight.
+ 
+
+There is no video for this worksheet.
+
+Over to you:
+* Load the file “BL0132 Compression - Forsentek". Set up the hardware appropriately. 
+* Make sure you understand how the program works. To start with you can compress the sensors to get a measurement. 
+Challenge:
+* Make a mechanical rig that compresses the sensor
+* Modify the program to make a weighing scale with the following characteristics:
+o Fore sensor with a platform
+o A display showing the weight of the object
+o A zero switch or touch object
+Hints:
+1. Review the worksheets in Introduction to microcontrollers where you will find examples of touchable buttons for graphical displays.
+
+Worksheet 10
+Strain sensors
+CP1972-10Sensors and
+microcontrollers
+Strain sensors are extensively used to measure the force in beams and mechanical systems. Teh choice of compressive or strain sensors is governed by the mechanical properties of the system being measured.
+
+In this worksheet / project you learn how strain sensors are used to forces in beams.
+
+
+There is no video for this worksheet.
+
+Over to you:
+* Load the file “BL0132 Compression - Tedea". Set up the hardware appropriately. 
+* Make sure you understand how the program works. To start with you can activate the sensor with your hands to get a measurement. 
+Challenge:
+o Need words from jack. 
+Hints:
+1. Review the worksheets in Introduction to microcontrollers where you will find examples of touchable buttons for graphical displays.
+
+I would like Jack to look at this and think of something a little better.
+
+Worksheet 11
+Pressure sensors
+CP1972-11Sensors and
+microcontrollers
+Pressure sensors are used extensively in the automotive industry for tyre pressure monitoring in vehicles, in carburettors, and exhaust systems.
+
+In this worksheet / project you learn how to use pressure sensors in microcontroller circuits. 
+
+There is no video for this worksheet.
+
+Over to you:
+* Load the file “BL0122 Pressure". Set up the hardware appropriately. 
+* Make sure you understand how the program works. To start with you can blow, or suck, on the sensor to make sure it works. 
+Challenge:
+* Get hold of a syringe style pump and hose to attach to the sensor.
+* Modify the program to make a pressure measuring system with the following characteristics:
+o Microcontroller system, sensor, pump and hose
+o A display of pressure rate, set flow rate and pump status
+o A graph showing flow rate variation over time – refreshing every 30 seconds. Temperature range 15C to 30C.
+o An LED that lights up when the target flow rate is over run 
+o A way of altering the set flow rate with either switches or graphical display touch areas ‘+’ and ‘-‘.
+You can get hold of a simple pump like this one from Amazon.
+
+Teacher’s notes
+Sensors and
+microcontrollersPrevious learning
+Some understanding of electronics is needed. 
+Pedagogy
+This set of worksheets provides structure for the study of microcontroller programming. The worksheets provide structure to the learning but do not provide all the information students need. Our vision as to how you teach this subject is:
+1. This is a very practical subject. We expect that 90% of the time students spend on this module will be spent working alone. 
+2. Each student should have Flowcode Embedded software and a set of E-blocks 3 hardware. Don’t be tempted to try to get students to learn this subject in pairs.
+3. Students should be introduced to each topic or worksheet. They should be given time to investigate the topic using the internet. If students are investigating this on their own, you may want to give additional structure to this activity.
+4. Students should then load an example program and download this to the microcontroller so that they can see how the program works. Example programs are available on the Flowcode Wiki for each of PIC, Arduino Mega and ESP32 microcontrollers. 
+5. Students should be given the opportunity to watch the accompanying YouTube video – individually or as a class activity. This explains the program.
+6. Students then modify each example as detailed in the worksheet. This ensures that they have success, but also ensures that they have understanding.
+7. Occasionally you should test students understanding by asking them to complete a project from scratch. This tests their understanding of what they have learned. 
+8. Students do not have to do all worksheets or tasks. That’s up to you to decide. Worksheet 10 and 11 are quite advanced.
+9. There are three sets of worksheets in this series: Introduction to microcontrollers, Sensors and microcontrollers, and Motors and microcontrollers. We have split the content by topic for ease of publication. You will need to decide what sequence your students complete the worksheets in. We have split the worksheet difficulty into Pass, Pass + and Distinction. Not all students will be able to complete all exercises. A reasonable approach would be to deliver Pass in each of Introduction to microcontrollers, Sensors and microcontrollers, and Motors and microcontrollers, then deliver Pass +, then deliver Distinction to those students who are capable.
+10. The curriculum is based on the requirements of the BTEC level 3 in Engineering – Unit 6: Microcontroller systems for engineers.  This can be downloaded from the Pearson web site. 
+Example programs
+In general the worksheets make use of prewritten functional examples. Students load the example, understand it and then modify it to make sure that they have learned the principles under discussion.
+
+The examples are available directly from within the Flowcode package. From within Flowcode select: FILE…NEW PROJECT…OPEN EXAMPLE OR TEMPLATE…and select the example you want from the relevant worksheet pack. 
+
+Examples are available separately for PIC, Arduino and Arduino microcontrollers. 
+Time
+Of course this depends on student capability. We estimate that it will take 15 hours to complete all the worksheets in this module. 
+Software
+The videos make use of Flowcode embedded and we anticipate that you are likely to use this for your programs. But you can use these worksheets with any microcontroller development software. The flowchart programs can easily be followed by C programmers. 
+Assessment
+Creating programs from scratch will be suitable as a way of assessing that students have understood the programs and have programming ability. 
+Hardware
+
+
+
+This course is designed to be used with a Matrix Microcontroller development centre. There are three versions:
+BL5394		ESP32 microcontroller development centre
+BL8624		PIC microcontroller development centre
+BL3797		Arduino microcontroller development centre
+These consist of:
+Upstream board – BL0082 PIC, BL0040 Arduino, or BL0070 ESP32
+BL0114 Combo board
+BL0117 Prototype board
+BL0118 Project board
+BL0127 Actuators board
+BL0135 9 axis motion / accelerometer board
+BL0144 Temp/humidity board
+BL0145 Switch board
+BL0156 Splitter board
+BL0172 Logic analyser with ribbon cable
+BL0167 LED board
+BL0183 Relay board
+BL0189 Analogue board
+
+
+Version control
+Sensors and microcontrollers31 10 25	First beta
+

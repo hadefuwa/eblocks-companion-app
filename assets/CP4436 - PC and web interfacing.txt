@@ -1,0 +1,238 @@
+
+Contents
+PC interfacing
+Bronze
+Worksheet 1 		Beginning hardware interfacing – PC to hardware
+Worksheet 2		Bidirectional hardware control 
+Worksheet 3 		JSON encoding
+
+Silver
+Worksheet 4		Full PC – Embedded project
+
+Teacher’s notes
+
+
+
+Preparation
+PC interfacing
+Before tackling the worksheets you will need to understand some basic information:
+Microcontroller basics
+These worksheets assume that you have completed a basic course in microcontroller programming like our Introduction to microcontroller programming course. 
+Board datasheets
+The worksheets make use of two downstream boards:
+BL0144 Temperature and humidity sensor
+BL0114-2 Combination board
+Information on these boards is given in the E-blocks 3 datasheet. 
+
+
+
+Worksheet 1
+Beginning hardware interfacing
+CP4436-1PC interfacing
+Traditional electronic control panels take a lot of putting together. It is far easier to create a virtual control panel on a PC link that to some low cost interface – like an Arduino Uno.
+
+In this worksheet you learn how you can use a PC to control and monitor the state I/O lines on an Embedded device. 
+
+
+
+
+Part 1
+
+
+
+https://youtu.be/uWSrXF2Y3M4
+Over to you:
+* Watch the video “PC Developer first USB project” on the Flowcode YouTube site. 
+* For this learning package there will be two programs: Embedded and PC Developer.
+* Load the file “First USB - PIC" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.
+* Load the file “First USB – PC”. Set up the USART com port to the Embedded USB connection. Select DEBUG…RUN.
+* The embedded program looks at the status of a swich on the microcontroller and sends this as a 1 or a 0 to the PC. 
+* The PC program looks at the USB port for data: in this case a 1 or a 0, and it alters the status of an on-screen LED accordingly.
+Challenge:
+* Alter the Embedded program so that it sends the value of a potentiometer – between 0 and 255 – to the PC.
+* Alter the PC program so that it receives a single number and shows it on a display.
+Hints:
+Embedded program:
+1. Set up a new variable – POTVOLT - with Type Byte
+2. Use the GetVoltage macro to read the potentiometer input as a voltage into POTVOLT
+3. Use the UART Sendnumber command to send this to the PC via USB
+PC program:
+1. Put a Circular Gauge component on the panel. This takes variables of Type Float – not just a simple byte.
+2. Create a new variable FloatPot type Float. You will need to assign this to the value of the incoming PotVolt variable with a command like: FloatPot = FLOAT PotVolt.
+3. Use the Circular Gauge to display the incoming value. 
+
+Part 2
+
+
+
+https://youtu.be/MPWSAafWQFo
+Over to you:
+* Watch the video “PC Developer second USB project” on the Flowcode YouTube site. 
+* For this learning package there will be two programs: Embedded and PC Developer.
+* Load the file “Second USB - PIC" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.
+* Open a 2nd Flowcode application and Load the file “Second USB – PC”. Set up the USART com port to the Embedded USB connection. Select DEBUG…RUN.
+* The PC program looks at the state of the on-screen switch: in this case a 1 or a 0, and it sends this value to the USB port.
+* The embedded program looks at the incoming data on the USB port and alters the value of a LED on the hardware accordingly.  
+Challenge:
+* Alter the PC program so that it sends the value of an on-screen slider – between 0 and 255 – to the PC.
+* Alter the PC program so that it receives a single number and shows it on a display.
+Hints:
+Embedded program:
+1. Delete the LED. 
+2. Trap the incoming value from the USB component. 
+3. Display the value of the slider on the LCD display. 
+PC program:
+1. Replace the switch for a Slider. 
+2. Alter the program so that it reads the value of the slider and sends a value between 0 and 255 via the USB component
+
+
+
+Worksheet 2
+Bidirectional hardware control
+CP4436-2PC interfacing
+In practice most Human Machine Interfaces need bidirectional transfer of information – in this case using the USB lead.
+
+In this worksheet you implement your first proper HMI. 
+
+
+
+https://youtu.be/DCghD8VH_a4
+Over to you:
+* Watch the video “PC Developer third USB project” on the Flowcode YouTube site. 
+* For this worksheet there will be two programs: Embedded and PC Developer.
+* Load the file “Third USB - PIC" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.
+* Open a 2nd Flowcode Window and Load the file “Third USB – PC”. Set up the USART com port to the Embedded USB connection. Select DEBUG…RUN.
+* This is a bidirectional data transfer system: both the PC and the embedded system look for the status of a switch locally and send it via USB. Each system then looks for incoming data and puts it on a LED..
+Hints:
+For the embedded system:
+1. Develop the program so that it reads the value of a potentiometer and transmits it as a number via USB to the PC.
+2. Develop the program so that it receives a number in the range 0 – 255 and displays it on the local LCD display.
+For the PC system:
+1. Develop the program so that it reads the number and publishes it on a gauge.
+2. Develop the program so that it reads the value of a circular knob and transmits if via USB. 
+
+
+
+Worksheet 3
+JSON encoding
+CP4436-3PC interfacing
+As you get larger amounts of data going between a PC and an embedded system, tracking each bit of data in a packet gets harder. The JSON encoding scheme makes data management much easier.
+
+In this worksheet you learn how the JSON system works.
+
+
+
+https://youtu.be/liKAzXWhHyU
+Over to you:
+* Watch the video “PC Developer program to monitor temperature and humidity on the PC” on the Flowcode YouTube site. 
+* For this worksheet there will be two programs: Embedded and PC Developer.
+* Load the file “Temp Hum JSON - Ard" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.
+* Load the file “Temp Hum JSON – PC”. Set up the USART com port to the Embedded USB connection. Select DEBUG…RUN.
+* This program uses JSON encoding to send temperature data to the PC via the USB lead. 
+* Use the Console to see the incoming data from the Embedded system – this allows you to see the JSON data packet structure. 
+Challenge:
+* Flowcode Embedded: Modify the program so that the status of two switches are also transmitted with in JSON packet. 
+* Flowcode PC developer: modify the program to include two panel switches that reflect the status of the switches on the hardware.
+* Add a text box that shows the value of the Humidity data sent in the JSON packet. 
+Hints:
+Embedded
+1. Add two switches to the Embedded panel and two Type Byte variables. 
+2. Associate the value of the variables with the state of the switches. 
+3. Add these to the JSON packet.
+
+PC Developer
+1. Add two LEDs to the PC Developer panel. 
+2. Extract the value of the switches from the incoming JSON packet. 
+3. Alter the state of the LEDs accordingly. 
+
+
+
+Worksheet 4
+Full PC – embedded project
+CP4436-4PC interfacing
+Once you understand JSON then larger bidirectional control and monitoring projects are just larger programs. 
+
+In this worksheet you establish quite a significant PC control and monitoring system that you can adapt for your own projects.
+
+
+
+https://youtu.be/YxShbPy_JJE
+Over to you:
+* Watch the video “PC Developer full USB project” on the Flowcode YouTube site. 
+* For this worksheet there will be two programs: Embedded and PC Developer.
+* Load the file “Full USB project - Ard" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.
+* Load the file “Full USB project – PC”. Set up the USART com port to the Embedded USB connection. Select DEBUG…RUN. (note that the screen will freeze until you send data to it using the PC Developer programme.
+* This program uses JSON encoding to send data to and from the Embedded system and the PC to form a quite comprehensive Human Machine Interface.
+* In PC Developer use the Console to see the incoming data from the Embedded system whilst altering the status of the Embedded system IO. The console allows you to see the JSON data packet structure. 
+Challenge:
+1. Flowcode Embedded: add a DC motor to the Embedded system. Alter the program so that the speed is controlled from the PC Developer program. Alter the program so that one of the PC Developer switches controls the direction of the motor.
+2. Flowcode PC Developer: Set the cursor to a new line and print the value of HUMINT
+Hints:
+1. Add a motors component to the Embedded panel. Use the incoming data and the DC motor hardware macros to trap incoming data and make appropriate adjustments.
+
+Notes for future work:
+An issue with this system is the timing between the Embedded System and the PC Developer system. In practice this is better controlled with an interrupt to monitor incoming communications on the USB port and a circular buffer to store data. 
+
+
+
+
+Teacher’s notes
+PC interfacingPrevious learning
+Some understanding of electronics is needed. 
+Students will have completed the Introduction to Microcontrollers course and have additional experience. This is a course for more advanced students and for those wanting to develop projects using a PC to monitor and control Embedded systems.
+Pedagogy
+This set of worksheets provides structure for the study of PC to Embedded system interfaces. The worksheets provide structure to the learning but do not provide all the information students need. Our vision as to how you teach this subject is:
+1. This is a very practical subject. We expect that 90% of the time students spend on this module will be spent working alone. 
+2. Each student should have Flowcode Embedded software and a set of E-blocks 3 hardware. Don’t be tempted to try to get students to learn this subject in pairs.
+3. Students should be introduced to each topic or worksheet. They should be given time to investigate the topic using the internet. If students are investigating this on their own, you may want to give additional structure to this activity.
+4. Students should then load an example program and download this to the microcontroller so that they can see how the program works. Example programs are available on the Flowcode Wiki for each of PIC, Arduino Mega and ESP32 microcontrollers. 
+5. Students should be given the opportunity to watch the accompanying YouTube video – individually or as a class activity. This explains the program.
+6. Students then modify each example as detailed in the worksheet. This ensures that they have success, but also ensures that they have understanding.
+7. Occasionally you should test students’ understanding by asking them to complete a project from scratch. This tests their understanding of what they have learned. 
+8. Students do not have to do all worksheets or tasks. That’s up to you to decide. Worksheet 10 and 11 are quite advanced.
+9. There are three sets of worksheets in this series: Introduction to microcontrollers, Sensors and microcontrollers, and Motors and microcontrollers. We have split the content by topic for ease of publication. You will need to decide what sequence your students complete the worksheets in. We have split the worksheet difficulty into Bronze, Silver, and Gold. Not all students will be able to complete all exercises. A reasonable approach would be to deliver Bronze in each of Introduction to microcontrollers, Sensors and microcontrollers, and Motors and microcontrollers, then deliver Silver then deliver Gold to those students who are capable.
+Example programs
+The worksheets make use of prewritten functional examples. Students load the example, understand it and then modify it to make sure that they have learned the principles under discussion. 
+
+The examples are available directly from within the Flowcode package. From within Flowcode select: FILE…NEW PROJECT…OPEN EXAMPLE OR TEMPLATE…and select the example you want from the relevant worksheet pack. 
+
+Examples are available separately for PIC, and Arduino microcontrollers. 
+Time
+Of course this depends on student capability. We estimate that it will take 10 hours to complete all the worksheets in this module. 
+Software
+The videos make use of Flowcode embedded and we anticipate that you are likely to use this for your programs. But you can use these worksheets with any microcontroller development software. The flowchart programs can easily be followed by C programmers. 
+Assessment
+Creating programs from scratch will be suitable as a way of assessing that students have understood the programs and have programming ability. 
+Hardware
+
+
+
+This course is designed to be used with a Matrix Microcontroller development centre. There are three versions:
+BL5394		ESP32 microcontroller development centre
+BL8624		PIC microcontroller development centre
+BL3797		Arduino microcontroller development centre
+These consist of:
+Upstream board – BL0082 PIC, BL0040 Arduino, or BL0070 ESP32
+BL0114 Combo board
+BL0117 Prototype board
+BL0118 Project board
+BL0127 Actuators board
+BL0135 9 axis motion / accelerometer board
+BL0144 Temp/humidity board
+BL0145 Switch board
+BL0156 Splitter board
+BL0172 Logic analyser with ribbon cable
+BL0167 LED board
+BL0183 Relay board
+BL0189 Analogue board
+
+
+
+Version control
+PC interfacing11 11 25	First Beta
+2
+
+
+2
+
+

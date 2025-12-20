@@ -219,13 +219,21 @@ function updateConnectionStatus(connected, port = null, detectedFQBN = null) {
     boardTypeMatches = false;
   }
 
-  if (connected && port && boardTypeMatches) {
+  // Get upload button and enable/disable based on connection
+  const uploadBtn = document.getElementById('upload-btn');
+  const isFullyConnected = connected && port && boardTypeMatches;
+
+  if (isFullyConnected) {
     dot.classList.add('connected');
     text.textContent = `Connected to ${port}`;
     // Update board image glow to green
     if (boardImage) {
       boardImage.classList.remove('disconnected');
       boardImage.classList.add('connected');
+    }
+    // Enable upload button when fully connected
+    if (uploadBtn) {
+      uploadBtn.disabled = false;
     }
   } else {
     dot.classList.remove('connected');
@@ -238,6 +246,10 @@ function updateConnectionStatus(connected, port = null, detectedFQBN = null) {
     if (boardImage) {
       boardImage.classList.remove('connected');
       boardImage.classList.add('disconnected');
+    }
+    // Disable upload button when not connected or board mismatch
+    if (uploadBtn) {
+      uploadBtn.disabled = true;
     }
     // Stop polling when disconnected or board mismatch
     if (window.stopSerialPolling) {
@@ -587,7 +599,17 @@ async function autoConnectToPort(portPath) {
 }
 
 // Curriculum Data
+// Top-level curriculum list
+const curriculumList = [
+  { code: 'CP4807', title: 'Introduction to microcontrollers' },
+  { code: 'CP0507', title: 'Motors and microcontrollers' },
+  { code: 'CP1972', title: 'Sensors and microcontrollers' },
+  { code: 'CP4436', title: 'PC and web interfacing' }
+];
+
+// Curriculum data organized by curriculum code, then by level
 const curriculumData = {
+  'CP4807': {
   bronze: [
     { number: 1, title: 'First program', code: 'CP4807-1' },
     { number: 2, title: 'Performing calculations', code: 'CP4807-2' },
@@ -606,6 +628,49 @@ const curriculumData = {
     { number: 11, title: 'Touch control systems', code: 'CP4807-11' },
     { number: 12, title: 'Web mirror', code: 'CP4807-12' }
   ]
+  },
+  'CP0507': {
+    bronze: [
+      { number: 1, title: 'Basic DC motor control', code: 'CP0507-1' },
+      { number: 2, title: 'Full bridge motor control', code: 'CP0507-2' },
+      { number: 3, title: 'Servo motor control', code: 'CP0507-3' },
+      { number: 4, title: 'Stepper motor control', code: 'CP0507-4' }
+    ],
+    silver: [],
+    gold: [
+      { number: 5, title: 'DC motor speed control', code: 'CP0507-5' }
+    ]
+  },
+  'CP1972': {
+    bronze: [
+      { number: 1, title: 'Analogue inputs', code: 'CP1972-1' },
+      { number: 2, title: 'Light sensor', code: 'CP1972-2' },
+      { number: 3, title: 'Analogue temperature sensor', code: 'CP1972-3' },
+      { number: 4, title: 'Digital temperature sensor', code: 'CP1972-4' },
+      { number: 5, title: 'Digital accelerometer', code: 'CP1972-5' }
+    ],
+    silver: [
+      { number: 6, title: 'Floats and ints', code: 'CP1972-6' }
+    ],
+    gold: [
+      { number: 7, title: 'Thermocouple', code: 'CP1972-7' },
+      { number: 8, title: 'Flow sensor', code: 'CP1972-8' },
+      { number: 9, title: 'Compressive force sensor', code: 'CP1972-9' },
+      { number: 10, title: 'Strain sensor', code: 'CP1972-10' },
+      { number: 11, title: 'Pressure sensor', code: 'CP1972-11' }
+    ]
+  },
+  'CP4436': {
+    bronze: [
+      { number: 1, title: 'Beginning hardware interfacing - PC to hardware', code: 'CP4436-1' },
+      { number: 2, title: 'Bidirectional hardware control', code: 'CP4436-2' },
+      { number: 3, title: 'JSON encoding', code: 'CP4436-3' }
+    ],
+    silver: [
+      { number: 4, title: 'Full PC - Embedded project', code: 'CP4436-4' }
+    ],
+    gold: []
+  }
 };
 
 // Worksheet Content Data - This is a large object, so we'll load it from the curriculum file
@@ -1332,15 +1397,1311 @@ void resetTimer() {
       'Web mirror allows real-time bidirectional communication - changes on screen reflect on web and vice versa.',
       'Some systems may require additional setup for external network access (port forwarding, etc.).'
     ]
+  },
+  // CP0507 Worksheets
+  'CP0507-1': {
+    title: 'Basic DC motor control',
+    code: 'CP0507-1',
+    description: 'There is a huge number of devices that use small motors including toys, electric toothbrushes, medical and mechatronics systems. Turning them on and off requires the use of a relay or a transistor. Varying the speed requires the use of Pulse Width Modulation as a power control technique.',
+    details: 'In this worksheet you will learn how to use a potentiometer and PWM to control the speed of a simple DC motor.',
+    videoUrl: 'https://youtu.be/e4gB8YcOp8I',
+    exampleCode: `/*
+  Worksheet CP0507-1: Basic DC Motor Control
+  Control motor speed using PWM and potentiometer
+*/
+
+const int MOTOR_PIN = 9;        // PWM pin for motor control
+const int POTENTIOMETER_PIN = A0;  // Analog input for potentiometer
+
+void setup() {
+  pinMode(MOTOR_PIN, OUTPUT);
+  pinMode(POTENTIOMETER_PIN, INPUT);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP0507-1: DC Motor Control");
+}
+
+void loop() {
+  // Read potentiometer value (0-1023)
+  int potValue = analogRead(POTENTIOMETER_PIN);
+  
+  // Convert to PWM value (0-255)
+  int motorSpeed = map(potValue, 0, 1023, 0, 255);
+  
+  // Control motor speed using PWM
+  analogWrite(MOTOR_PIN, motorSpeed);
+  
+  // Print values to Serial Monitor
+  Serial2.print("Potentiometer: ");
+  Serial2.print(potValue);
+  Serial2.print(" | Motor Speed: ");
+  Serial2.println(motorSpeed);
+  
+  delay(100);  // Small delay for stability
+}`,
+    tasks: [
+      'Watch the video "Controlling DC motors - Simple DC" on the Flowcode YouTube site.',
+      'Load the example code and upload it to your board.',
+      'Connect a potentiometer to analog pin A0 and a DC motor to pin 9.',
+      'The program allows you to control the speed of the motor using a potentiometer.'
+    ],
+    challenges: [
+      'Modify the program so that two switches control the speed of the motor: plus and minus.',
+      'Print the speed on the LCD.'
+    ],
+    hints: [
+      'In the main loop detect if a switch has been pressed - say switch PORTA0 and PORTA1 on a combo board or switch board on port A.',
+      'Use a variable SPEED and add or subtract 1 from SPEED as the appropriate switch is detected.',
+      'Use two IF icons for the logic - IF switch A0 is pressed or IF switch A1 is pressed',
+      'Put the appropriate logic in the YES branch of the IF icons',
+      'Replace the two IF icons with a SWITCH icon.'
+    ]
+  },
+  'CP0507-2': {
+    title: 'Full bridge motor control',
+    code: 'CP0507-2',
+    description: 'Sometimes we need to control the direction of a motor - for example an electric wheelchair. Wheelchairs typically make use of a pair of 12 or 24V DC motors - one on each drive wheel. A microcontroller /joystick system allows users to go forwards, backwards and also turn left and right. A full bridge circuit - typically in a single chip/module these days - provides this control.',
+    details: 'In this worksheet you learn how to control a motor using a full bridge system.',
+    videoUrl: 'https://youtu.be/-ajj-YChfro',
+    exampleCode: `/*
+  Worksheet CP0507-2: Full Bridge Motor Control
+  Control motor direction using H-bridge (L298N or similar)
+*/
+
+const int MOTOR_PIN1 = 9;   // Motor control pin 1 (PWM)
+const int MOTOR_PIN2 = 10;  // Motor control pin 2 (PWM)
+const int ENABLE_PIN = 8;    // Enable pin
+
+void setup() {
+  pinMode(MOTOR_PIN1, OUTPUT);
+  pinMode(MOTOR_PIN2, OUTPUT);
+  pinMode(ENABLE_PIN, OUTPUT);
+  
+  digitalWrite(ENABLE_PIN, HIGH);  // Enable motor driver
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP0507-2: Full Bridge Motor Control");
+}
+
+void loop() {
+  // Forward direction
+  Serial2.println("Motor: FORWARD");
+  analogWrite(MOTOR_PIN1, 200);  // Speed
+  analogWrite(MOTOR_PIN2, 0);
+  delay(3000);
+  
+  // Stop briefly
+  analogWrite(MOTOR_PIN1, 0);
+  analogWrite(MOTOR_PIN2, 0);
+  delay(500);
+  
+  // Reverse direction
+  Serial2.println("Motor: REVERSE");
+  analogWrite(MOTOR_PIN1, 0);
+  analogWrite(MOTOR_PIN2, 200);  // Speed
+  delay(3000);
+  
+  // Stop briefly
+  analogWrite(MOTOR_PIN1, 0);
+  analogWrite(MOTOR_PIN2, 0);
+  delay(500);
+}`,
+    tasks: [
+      'Watch the video "Controlling DC motors - full bridge" on the Flowcode YouTube site.',
+      'Load the example code and upload it to your board.',
+      'Connect an H-bridge motor driver (e.g., L298N) to pins 8, 9, and 10.',
+      'The program cycles the motor forwards and backwards at a fixed speed.'
+    ],
+    challenges: [
+      'Modify the program so that two switches control the direction of the motor: forwards and backwards and two switches control the speed.',
+      'Print speed and the direction on the LCD.'
+    ],
+    hints: [
+      'In the main loop detect if a switch has been pressed - say A0, A1, A2, A3',
+      'Use a SWITCH icon for the logic - assume only one switch is pressed at any time',
+      'Put the appropriate logic in the branches of the SWITCH icon.'
+    ]
+  },
+  'CP0507-3': {
+    title: 'Servo motor control',
+    code: 'CP0507-3',
+    description: 'Small servo motors use a miniature DC motor with positional feedback control to allow you to control the angle of a motor rather than the speed. The angle is changed to a linear position control by using a small arm on the rotor with a rod. This allows the flaps on radio-controlled aeroplanes to be controlled remotely.',
+    details: 'In this worksheet you learn how to control simple servo motors.',
+    videoUrl: 'https://youtu.be/U-GoNwE5kPk',
+    exampleCode: `/*
+  Worksheet CP0507-3: Servo Motor Control
+  Control servo position using potentiometer
+*/
+
+#include <Servo.h>
+
+Servo myServo;
+const int SERVO_PIN = 9;
+const int POTENTIOMETER_PIN = A0;
+
+void setup() {
+  myServo.attach(SERVO_PIN);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP0507-3: Servo Motor Control");
+}
+
+void loop() {
+  // Read potentiometer value (0-1023)
+  int potValue = analogRead(POTENTIOMETER_PIN);
+  
+  // Convert to servo angle (0-180 degrees)
+  int angle = map(potValue, 0, 1023, 0, 180);
+  
+  // Set servo position
+  myServo.write(angle);
+  
+  // Print values
+  Serial2.print("Potentiometer: ");
+  Serial2.print(potValue);
+  Serial2.print(" | Angle: ");
+  Serial2.print(angle);
+  Serial2.println(" degrees");
+  
+  delay(15);  // Small delay for servo stability
+}`,
+    tasks: [
+      'Watch the video "Controlling Servo motors" on the Flowcode YouTube site.',
+      'Load the example code and upload it to your board.',
+      'Connect a servo motor to pin 9 and a potentiometer to analog pin A0.',
+      'The program uses a potentiometer to adjust the position of the servo motor.'
+    ],
+    challenges: [
+      'Use a logic analyser to view the waveform generated by the microcontroller for different positions of the servo motor.',
+      'Calibrate the motor angle for 0 and 255 full scale.',
+      'Use some maths to display the angle on the LCD.'
+    ],
+    hints: [
+      'Set up a Real Type variable - Angle.',
+      'Make sure you use the decimal point on all Real calculations: e.g. "2.0" not "2".',
+      'Measure the angle (visually) for an output of 0 and 255.',
+      'Calculate the angle and display it on the LCD.'
+    ]
+  },
+  'CP0507-4': {
+    title: 'Stepper motor control',
+    code: 'CP0507-4',
+    description: 'Stepper motors are used to accurately rotate a motor one step at a time. These have lots of applications including CNC machines for shaping wood and metal. (The spindle here is often a DC motor with speed control).',
+    details: 'In this worksheet you will learn how to control a stepper motor.',
+    videoUrl: 'https://youtu.be/8Ihe7q362RA',
+    exampleCode: `/*
+  Worksheet CP0507-4: Stepper Motor Control
+  Control stepper motor rotation
+*/
+
+#include <Stepper.h>
+
+// Define stepper motor steps per revolution
+const int stepsPerRevolution = 200;
+
+// Initialize stepper motor (pins: IN1, IN2, IN3, IN4)
+Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
+
+void setup() {
+  // Set motor speed (RPM)
+  myStepper.setSpeed(60);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP0507-4: Stepper Motor Control");
+}
+
+void loop() {
+  // Rotate clockwise one revolution
+  Serial2.println("Rotating clockwise...");
+  myStepper.step(stepsPerRevolution);
+  delay(1000);
+  
+  // Rotate counterclockwise one revolution
+  Serial2.println("Rotating counterclockwise...");
+  myStepper.step(-stepsPerRevolution);
+  delay(1000);
+}`,
+    tasks: [
+      'Watch the video "Controlling stepper motors" on the Flowcode YouTube site.',
+      'Load the example code and upload it to your board.',
+      'Connect a stepper motor driver to pins 8, 9, 10, and 11.'
+    ],
+    challenges: [
+      'Develop a program that cycles the motor forwards or backwards in 10 degree steps when a forward or backward switch is pressed.'
+    ],
+    hints: [
+      'Use the Actuators board datasheet to understand how many steps are in a 360 degree circle.',
+      'In the main loop detect if a +10 degree or -10 degree switch has been pressed - say switch PORTA0 and PORTA1 on a combo board.',
+      'Use a SWITCH icon for the logic and a LOOP inside each branch that moves the motor forwards or backwards by the appropriate step count.',
+      'Use the display to show the program function.'
+    ]
+  },
+  'CP0507-5': {
+    title: 'DC motor speed control',
+    code: 'CP0507-5',
+    description: 'Varying the power varies the speed, but that does not tell you how fast the motor is turning. For a DC motor some kind of feedback is needed. Then you can form a "closed loop" system with a microcontroller: the microcontroller measures the speed and varies the power until the required speed of the motor is reached. This technique is used in all sorts of machines.',
+    details: 'In this worksheet you learn how to make a system that will allow you to measure and then control motor speed.',
+    videoUrl: 'https://youtu.be/-hRHCYSXBSE',
+    exampleCode: `/*
+  Worksheet CP0507-5: DC Motor Speed Control with Feedback
+  Closed-loop speed control system
+*/
+
+const int MOTOR_PIN = 9;           // PWM pin for motor
+const int SPEED_SENSOR_PIN = 2;    // Interrupt pin for speed sensor (hall effect)
+const int INCREASE_PIN = 22;       // Switch to increase target speed
+const int DECREASE_PIN = 23;       // Switch to decrease target speed
+
+volatile int pulseCount = 0;
+int targetRPM = 100;               // Target speed in RPM
+int currentRPM = 0;
+unsigned long lastTime = 0;
+unsigned long lastPulseTime = 0;
+int motorSpeed = 128;              // Current PWM value (0-255)
+
+void setup() {
+  pinMode(MOTOR_PIN, OUTPUT);
+  pinMode(SPEED_SENSOR_PIN, INPUT_PULLUP);
+  pinMode(INCREASE_PIN, INPUT_PULLUP);
+  pinMode(DECREASE_PIN, INPUT_PULLUP);
+  
+  // Attach interrupt for speed sensor
+  attachInterrupt(digitalPinToInterrupt(SPEED_SENSOR_PIN), countPulse, RISING);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP0507-5: Motor Speed Control");
+}
+
+void loop() {
+  // Read target speed adjustment switches
+  if (digitalRead(INCREASE_PIN) == LOW) {
+    targetRPM += 10;
+    if (targetRPM > 500) targetRPM = 500;
+    delay(200);  // Debounce
+  }
+  if (digitalRead(DECREASE_PIN) == LOW) {
+    targetRPM -= 10;
+    if (targetRPM < 0) targetRPM = 0;
+    delay(200);  // Debounce
+  }
+  
+  // Calculate current RPM (assuming 1 pulse per revolution)
+  unsigned long currentTime = millis();
+  if (currentTime - lastPulseTime > 1000) {
+    // Calculate RPM from pulse count
+    currentRPM = (pulseCount * 60) / 1;  // Pulses per minute
+    pulseCount = 0;
+    lastPulseTime = currentTime;
+  }
+  
+  // Closed-loop control: adjust motor speed based on error
+  int error = targetRPM - currentRPM;
+  motorSpeed += error / 5;  // Simple proportional control
+  
+  // Limit motor speed
+  if (motorSpeed > 255) motorSpeed = 255;
+  if (motorSpeed < 0) motorSpeed = 0;
+  
+  analogWrite(MOTOR_PIN, motorSpeed);
+  
+  // Display values every second
+  if (currentTime - lastTime >= 1000) {
+    Serial2.print("Target RPM: ");
+    Serial2.print(targetRPM);
+    Serial2.print(" | Current RPM: ");
+    Serial2.print(currentRPM);
+    Serial2.print(" | Motor Speed: ");
+    Serial2.println(motorSpeed);
+    lastTime = currentTime;
+  }
+  
+  delay(10);
+}
+
+// Interrupt service routine for speed sensor
+void countPulse() {
+  pulseCount++;
+}`,
+    tasks: [
+      'Watch the video "Controlling DC motors - speed control" on the Flowcode YouTube site.',
+      'Load the example code and upload it to your board.',
+      'Connect a speed sensor (hall effect) to pin 2, motor to pin 9, and switches to pins 22 and 23.',
+      'Set up the hardware as detailed in the program and test the closed-loop speed control.'
+    ],
+    challenges: [
+      'Use the logic analyser to understand the function of the program.',
+      'Modify the program to form a closed loop system that varies the speed of the DC motor. Use two push to make switches to increase and decrease the speed.'
+    ],
+    hints: [
+      'The program you have measures the speed in RPM.',
+      'In the Main loop detect which switches are pressed - if any.',
+      'Create a variable TARGET_RPM',
+      'Change the display so that TARGET_RPM and RPM speed are displayed. Use the update-display routine for writing to the display.',
+      'Vary the DC motor power up or down depending on whether the TARGET_RPM is lower or greater than the RPM.'
+    ]
+  },
+  // CP1972 Worksheets
+  'CP1972-1': {
+    title: 'Analogue inputs',
+    code: 'CP1972-1',
+    description: 'Computers work in 1\'s and 0\'s - the digital world. Sometimes we need to convert a varying voltage into a format a microcontroller can understand. For example: the voltage on a potentiometer on a radio, or from a sensor. We need to convert an analogue signal into a digital value.',
+    details: 'In this worksheet you explore this with a simple potentiometer.',
+    videoUrl: 'https://youtu.be/HPHHLHAWRVM',
+    exampleCode: `/*
+  Worksheet CP1972-1: Analogue Inputs
+  Read and display analog values from potentiometer
+*/
+
+const int POTENTIOMETER_PIN = A0;  // Analog input pin
+const int LED_PIN = 13;            // LED indicator
+
+void setup() {
+  pinMode(POTENTIOMETER_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-1: Analogue Inputs");
+}
+
+void loop() {
+  // Read analog value (0-1023)
+  int analogValue = analogRead(POTENTIOMETER_PIN);
+  
+  // Convert to 0-255 range (8-bit)
+  int mappedValue = map(analogValue, 0, 1023, 0, 255);
+  
+  // Display values
+  Serial2.print("Analog Reading: ");
+  Serial2.print(analogValue);
+  Serial2.print(" | Mapped Value: ");
+  Serial2.println(mappedValue);
+  
+  // Flash LED when value exceeds threshold
+  if (analogValue > 512) {
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
+  }
+  
+  delay(100);
+}`,
+    tasks: [
+      'Watch the video "Analogue inputs" on the Flowcode YouTube site.',
+      'Load the example code and upload it to your board.',
+      'Connect a potentiometer to analog pin A0.',
+      'The program displays the reading on an analogue port from 0 to 255 based on the supply voltage on microcontroller board.'
+    ],
+    challenges: [
+      'Modify the program so that it displays the potentiometer voltage on the display',
+      'Modify the program so that a LED comes on when the voltage input is more than 1V.'
+    ],
+    hints: [
+      'Set up a new variable - POTVOLT - with Type Float',
+      'Use the GetVoltage macro to read the potentiometer input as a voltage into POTVOLT',
+      'Use an IF icon to test POTVOLT - make sure you use "1.0" as a comparison not "1" to make sure the floating point operator works properly.',
+      'Use the PRINTFLOAT macro on the LCD component'
+    ]
+  },
+  'CP1972-2': {
+    title: 'Light sensor',
+    code: 'CP1972-2',
+    description: 'The output voltage from a light sensor either gets higher with more light, or lower. This allows us to detect the light level so that we know when to turn street lights on and off.',
+    details: 'In this example you investigate the light level and make an adjustable light switch.',
+    exampleCode: `/*
+  Worksheet CP1972-2: Light Sensor
+  Read light level and control LED based on threshold
+*/
+
+const int LIGHT_SENSOR_PIN = A0;  // Light sensor analog input
+const int LED_PIN = 13;            // LED output
+const int THRESHOLD_PIN = A1;      // Potentiometer for threshold adjustment
+
+int lightLevel = 0;
+int threshold = 512;
+
+void setup() {
+  pinMode(LIGHT_SENSOR_PIN, INPUT);
+  pinMode(THRESHOLD_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-2: Light Sensor");
+}
+
+void loop() {
+  // Read light sensor value (0-1023)
+  lightLevel = analogRead(LIGHT_SENSOR_PIN);
+  
+  // Read threshold from potentiometer
+  threshold = analogRead(THRESHOLD_PIN);
+  
+  // Control LED based on light level
+  if (lightLevel < threshold) {
+    digitalWrite(LED_PIN, HIGH);  // Dark - turn LED on
+  } else {
+    digitalWrite(LED_PIN, LOW);   // Bright - turn LED off
+  }
+  
+  // Display values
+  Serial2.print("Light Level: ");
+  Serial2.print(lightLevel);
+  Serial2.print(" | Threshold: ");
+  Serial2.print(threshold);
+  Serial2.print(" | LED: ");
+  Serial2.println(digitalRead(LED_PIN) ? "ON" : "OFF");
+  
+  delay(200);
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'Connect a light sensor to analog pin A0 and a potentiometer to A1.',
+      'The program reads the value of the light sensor and displays it as a number.',
+      'Shine a mobile phone light or a torch on the sensor to establish what the numerical range of the sensors is.'
+    ],
+    challenges: [
+      'Make an electronic light switch that turns a LED off when the light level goes high.',
+      'Add a potentiometer to your program which adjusts the light level at which the switch is made.'
+    ],
+    hints: [
+      'Add a variable LightLevel and read the light sensor value into this variable',
+      'In the Main loop use an IF icon to compare LightLevel to the light sensor input. Alter the LED output accordingly.',
+      'Use two lines on the LCD display to show light input level, LightLevel, and to make sure your program is working.'
+    ]
+  },
+  'CP1972-3': {
+    title: 'Analogue temperature sensor',
+    code: 'CP1972-3',
+    description: 'A thermistor\'s resistance varies with temperature. This means that you can use a simple voltage divider to measure temperature. One difficulty here is that the variation of resistance with temperature is not linear, so the program needs to take this into account. Flowcode does this for you in the thermistor component',
+    details: 'In this example you develop a simple temperature measuring system.',
+    videoUrl: 'https://youtu.be/rI4F64wz6Lk',
+    exampleCode: `/*
+  Worksheet CP1972-3: Analogue Temperature Sensor (Thermistor)
+  Read temperature using thermistor and voltage divider
+*/
+
+const int THERMISTOR_PIN = A0;    // Thermistor analog input
+const int LED_PIN = 13;            // LED indicator
+const int TEMP_THRESHOLD = 25;     // Temperature threshold in Celsius
+
+void setup() {
+  pinMode(THERMISTOR_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-3: Temperature Sensor");
+}
+
+void loop() {
+  // Read analog value from thermistor
+  int analogValue = analogRead(THERMISTOR_PIN);
+  
+  // Convert to voltage (0-5V)
+  float voltage = (analogValue / 1023.0) * 5.0;
+  
+  // Simple temperature calculation (Steinhart-Hart approximation)
+  // This is a simplified version - actual thermistors need calibration
+  float temperature = (voltage - 0.5) * 100.0;  // Rough approximation
+  
+  // Control LED when temperature exceeds threshold
+  if (temperature > TEMP_THRESHOLD) {
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
+  }
+  
+  // Display values
+  Serial2.print("Analog: ");
+  Serial2.print(analogValue);
+  Serial2.print(" | Voltage: ");
+  Serial2.print(voltage, 2);
+  Serial2.print("V | Temperature: ");
+  Serial2.print(temperature, 1);
+  Serial2.println("°C");
+  
+  delay(500);
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'Connect a thermistor circuit to analog pin A0.',
+      'The program reads the value of the temperature and displays it.',
+      'Using your fingers touch the sensor and see what the variation is. You can breathe on it as well.'
+    ],
+    challenges: [
+      'Make an electronic temperature sensor that turns a LED on when the temperature reaches a set level.',
+      'Alter the program so that the LCD displays the switch temperature as well as the actual temperature.'
+    ],
+    hints: [
+      'Add a variable SwitchTemp and read the Temperature value into this variable',
+      'In the Main loop use an IF icon to compare SwitchTemp to the temperature sensor input. Alter the LED output accordingly.'
+    ]
+  },
+  'CP1972-4': {
+    title: 'Digital temperature sensor',
+    code: 'CP1972-4',
+    description: 'Analogue temperature sensors are very cheap, very easy to use, but very inaccurate. Accurate digital temperature sensors chips are very precise but require a little more programming technique.',
+    details: 'In this worksheet you investigate the use of a digital temperature sensor which uses serial communication to transfer information.',
+    videoUrl: 'https://youtu.be/7r7SHiJQJMA',
+    exampleCode: `/*
+  Worksheet CP1972-4: Digital Temperature Sensor (DHT22/DHT11)
+  Read temperature and humidity from digital sensor
+*/
+
+#include <DHT.h>
+
+#define DHT_PIN 2        // Digital pin connected to DHT sensor
+#define DHT_TYPE DHT22   // DHT22 (or DHT11)
+
+DHT dht(DHT_PIN, DHT_TYPE);
+
+void setup() {
+  Serial2.begin(115200);
+  delay(2000);
+  dht.begin();
+  Serial2.println("Worksheet CP1972-4: Digital Temperature Sensor");
+}
+
+void loop() {
+  // Wait a few seconds between measurements
+  delay(2000);
+  
+  // Read temperature and humidity
+  float temperature = dht.readTemperature();  // Celsius
+  float humidity = dht.readHumidity();       // Percentage
+  
+  // Check if readings are valid
+  if (isnan(temperature) || isnan(humidity)) {
+    Serial2.println("Failed to read from DHT sensor!");
+    return;
+  }
+  
+  // Display values
+  Serial2.print("Temperature: ");
+  Serial2.print(temperature, 1);
+  Serial2.print("°C | Humidity: ");
+  Serial2.print(humidity, 1);
+  Serial2.println("%");
+}`,
+    tasks: [
+      'Watch the video "Dig Temp sensor" on the Flowcode YouTube site.',
+      'Load the example code and upload it to your board.',
+      'Connect a DHT22 or DHT11 sensor to pin 2.',
+      'The program shows the temperature and humidity from the digital temperature sensor.'
+    ],
+    challenges: [
+      'Place your finger on top of the sensor and observe how the temperature reading changes.',
+      'The sensor also measures humidity. Modify the program so that it measures humidity and prints it on the display.'
+    ],
+    hints: [
+      'Add a variable HUMINT (of Type INT) and read the humidity value into this variable using the GetHumidityInt macro',
+      'Set the cursor to a new line and print the value of HUMINT'
+    ]
+  },
+  'CP1972-5': {
+    title: 'Digital accelerometer',
+    code: 'CP1972-5',
+    description: 'Digital accelerometer chips are used in software to measure the orientation of a device - like the digital level software on your mobile phone. These serial devices give out data on the X, Y, Z orientation of the chip.',
+    details: 'In this worksheet you investigate a typical digital accelerometer.',
+    exampleCode: `/*
+  Worksheet CP1972-5: Digital Accelerometer (MPU6050)
+  Read X, Y, Z acceleration values
+*/
+
+#include <Wire.h>
+#include <MPU6050.h>
+
+MPU6050 mpu;
+
+void setup() {
+  Serial2.begin(115200);
+  delay(2000);
+  
+  Wire.begin();
+  mpu.initialize();
+  
+  if (mpu.testConnection()) {
+    Serial2.println("Worksheet CP1972-5: Accelerometer");
+    Serial2.println("MPU6050 connection successful!");
+  } else {
+    Serial2.println("MPU6050 connection failed!");
+  }
+}
+
+void loop() {
+  // Read accelerometer values
+  int16_t ax, ay, az;
+  mpu.getAcceleration(&ax, &ay, &az);
+  
+  // Convert to g-force (divide by 16384 for ±2g range)
+  float accelX = ax / 16384.0;
+  float accelY = ay / 16384.0;
+  float accelZ = az / 16384.0;
+  
+  // Display values
+  Serial2.print("X: ");
+  Serial2.print(accelX, 2);
+  Serial2.print("g | Y: ");
+  Serial2.print(accelY, 2);
+  Serial2.print("g | Z: ");
+  Serial2.print(accelZ, 2);
+  Serial2.println("g");
+  
+  delay(500);
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'Connect an MPU6050 accelerometer module via I2C (SDA/SCL pins).',
+      'The program shows the X, Y, Z values of acceleration.'
+    ],
+    challenges: [
+      'Modify the program to make a system that shows the board is level in the X plane.',
+      'Modify the text output so that it also displays the angle of the board.'
+    ],
+    hints: [
+      'Use Graphical display macros to draw a background rectangle for the level at the bottom of the screen',
+      'Use the DrawCircle command to draw a circle representing the level air bubble. The circle is in the centre of the rectangle when the device is level and it at either end when the board is at 90 degrees.',
+      'Use a new variable XInt which is type Integer.',
+      'Use the calculation command XIntNew = XFloat * 200 + 200 to turn the Float value XFloat into an integer that can be used in the Graphical Display DrawCircle macro.',
+      'Use another variable XIntOld to track the old X value. Draw a black circle over the old X position to "wipe" that portion of the display.'
+    ]
+  },
+  'CP1972-6': {
+    title: 'Floats and ints',
+    code: 'CP1972-6',
+    description: 'As you start to measure real world quantities you will need to understand how to manipulate numbers outside the range of a single byte: 0 to 255.',
+    details: 'Variables of type INT have a range of -32768 to + 32767. Floating point numbers allow you to manipulate numbers with decimal points.',
+    exampleCode: `/*
+  Worksheet CP1972-6: Floats and Ints
+  Demonstrating different variable types and their ranges
+*/
+
+int integerValue = 1000;
+float floatValue = 3.14159;
+byte byteValue = 255;
+long longValue = 1000000;
+
+void setup() {
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-6: Floats and Ints");
+  Serial2.println("--- Variable Types Demo ---");
+}
+
+void loop() {
+  // Integer operations
+  integerValue += 100;
+  if (integerValue > 32767) integerValue = -32768;  // Wrap around
+  
+  // Float operations
+  floatValue += 0.1;
+  if (floatValue > 10.0) floatValue = 0.0;
+  
+  // Byte operations (0-255)
+  byteValue++;
+  if (byteValue > 255) byteValue = 0;
+  
+  // Long operations
+  longValue += 1000;
+  
+  // Display all values
+  Serial2.print("Integer: ");
+  Serial2.print(integerValue);
+  Serial2.print(" | Float: ");
+  Serial2.print(floatValue, 2);
+  Serial2.print(" | Byte: ");
+  Serial2.print(byteValue);
+  Serial2.print(" | Long: ");
+  Serial2.println(longValue);
+  
+  // Demonstrate calculations
+  float result = (floatValue * integerValue) / 100.0;
+  Serial2.print("Calculation (float * int / 100): ");
+  Serial2.println(result, 2);
+  
+  delay(1000);
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'The program shows how Floats and Ints are used in programs.',
+      'Make sure you read the comments thoroughly, so you understand how to use these new types of variables.'
+    ],
+    challenges: [
+      'Use the BL0144 temperature and humidity sensor to make a small weather station with the following properties:',
+      'A display of temperature, and humidity to 2 decimal places. Temperature range -10C to +40C. Humidity from 0% to 100%.',
+      'A graph showing temperature variation over time - refreshing every 24 hours.',
+      'A clock'
+    ],
+    hints: [
+      'Review the worksheets in Introduction to microcontrollers where you will find examples of graphs and graphical displays, and touchable buttons for graphical displays.',
+      'Review the worksheets in Introduction to microcontrollers where you will find information on timer interrupts.'
+    ]
+  },
+  'CP1972-7': {
+    title: 'Thermocouple',
+    code: 'CP1972-7',
+    description: 'Thermocouples are often used for measuring temperature in industrial processes. They are not as accurate as some modern chips - but they have a much greater range - up to 2,500C.',
+    details: 'In this worksheet / project you learn how to use a thermocouple to make a temperature control system.',
+    exampleCode: `/*
+  Worksheet CP1972-7: Thermocouple Temperature Sensor
+  Read high-temperature measurements using thermocouple
+*/
+
+#include <MAX6675.h>
+
+// MAX6675 thermocouple amplifier
+const int SO_PIN = 50;   // Serial Out
+const int CS_PIN = 51;   // Chip Select
+const int SCK_PIN = 52;  // Serial Clock
+const int HEATER_PIN = 9; // PWM pin for heater control
+
+MAX6675 thermocouple(SCK_PIN, CS_PIN, SO_PIN);
+
+float targetTemp = 100.0;  // Target temperature in Celsius
+float currentTemp = 0.0;
+int heaterPower = 0;
+
+void setup() {
+  pinMode(HEATER_PIN, OUTPUT);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-7: Thermocouple");
+}
+
+void loop() {
+  // Read temperature from thermocouple
+  currentTemp = thermocouple.readCelsius();
+  
+  // Simple proportional control
+  float error = targetTemp - currentTemp;
+  heaterPower = constrain((int)(error * 2.5), 0, 255);
+  analogWrite(HEATER_PIN, heaterPower);
+  
+  // Display values
+  Serial2.print("Temperature: ");
+  Serial2.print(currentTemp, 1);
+  Serial2.print("°C | Target: ");
+  Serial2.print(targetTemp, 1);
+  Serial2.print("°C | Heater: ");
+  Serial2.print(heaterPower);
+  Serial2.println("%");
+  
+  delay(500);
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'Connect a MAX6675 thermocouple amplifier module to pins 50, 51, 52.',
+      'Make sure you understand how the program works.'
+    ],
+    challenges: [
+      'Modify the program to make a heating controller which includes the following features:',
+      'A display of temperature, set temperature and heater status',
+      'A graph showing temperature variation over time - refreshing every 30 minutes. Temperature range 15C to 30C.',
+      'An LED that lights up when the target temperature is over run',
+      'A way of altering the set temperature with either switches or graphical display touch areas "+" and "-".'
+    ],
+    hints: [
+      'Review the worksheets in Introduction to microcontrollers where you will find examples of graphs and graphical displays, and touchable buttons for graphical displays.'
+    ]
+  },
+  'CP1972-8': {
+    title: 'Flow sensor',
+    code: 'CP1972-8',
+    description: 'Flow rate sensors are everywhere: from petrol pumps, to drug delivery systems to water meters and industrial processors. At the heart of them all is a flow rate sensor.',
+    details: 'In this worksheet / project you learn how flow rate sensors work and use one to make a water flow regulator.',
+    exampleCode: `/*
+  Worksheet CP1972-8: Flow Sensor
+  Measure flow rate and control pump
+*/
+
+const int FLOW_SENSOR_PIN = 2;    // Interrupt pin for flow sensor
+const int PUMP_PIN = 9;            // PWM pin for pump control
+const int TARGET_FLOW_PIN = A0;    // Potentiometer for target flow
+
+volatile int pulseCount = 0;
+float flowRate = 0.0;              // Flow rate in L/min
+float targetFlow = 1.0;            // Target flow rate
+int pumpSpeed = 128;               // Pump PWM value
+
+void setup() {
+  pinMode(FLOW_SENSOR_PIN, INPUT_PULLUP);
+  pinMode(PUMP_PIN, OUTPUT);
+  pinMode(TARGET_FLOW_PIN, INPUT);
+  
+  // Attach interrupt for flow sensor
+  attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), countPulse, RISING);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-8: Flow Sensor");
+}
+
+void loop() {
+  // Read target flow from potentiometer (0-5 L/min)
+  int potValue = analogRead(TARGET_FLOW_PIN);
+  targetFlow = map(potValue, 0, 1023, 0, 500) / 100.0;  // Convert to L/min
+  
+  // Calculate flow rate (assuming 450 pulses per liter)
+  static unsigned long lastTime = 0;
+  unsigned long currentTime = millis();
+  
+  if (currentTime - lastTime >= 1000) {
+    // Calculate flow rate: pulses per second * 60 / pulses per liter
+    flowRate = (pulseCount * 60.0) / 450.0;
+    pulseCount = 0;
+    lastTime = currentTime;
+  }
+  
+  // Closed-loop control: adjust pump speed based on error
+  float error = targetFlow - flowRate;
+  pumpSpeed += (int)(error * 50);
+  pumpSpeed = constrain(pumpSpeed, 0, 255);
+  analogWrite(PUMP_PIN, pumpSpeed);
+  
+  // Display values
+  Serial2.print("Flow Rate: ");
+  Serial2.print(flowRate, 2);
+  Serial2.print(" L/min | Target: ");
+  Serial2.print(targetFlow, 2);
+  Serial2.print(" L/min | Pump: ");
+  Serial2.println(pumpSpeed);
+  
+  delay(100);
+}
+
+// Interrupt service routine
+void countPulse() {
+  pulseCount++;
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'Connect a flow sensor to pin 2 (interrupt) and a pump to pin 9.',
+      'Make sure you understand how the program works. To start with you can blow through the sensor to make sure it works.'
+    ],
+    challenges: [
+      'Make a mechanical rig that allows fluid or air to pass through the sensor. You may need a pump, a tank and appropriate pipes. You will need to use the Power board and power supply to activate a 12 or 24V pump.',
+      'Modify the program to make a water flow regulator and meter with the following characteristics:',
+      'Microcontroller system, sensor, tank, pump, pipes',
+      'A display of flow rate, set flow rate and pump status',
+      'A graph showing flow rate variation over time - refreshing every 30 minutes.',
+      'An LED that lights up when the target flow rate is over run',
+      'A way of altering the set flow rate with either switches or graphical display touch areas "+" and "-".'
+    ],
+    hints: [
+      'There is a worksheet in Microcontrollers and motors where you can learn how to use the BL0110 Power board.',
+      'Review the worksheets in Introduction to microcontrollers where you will find examples of graphs and graphical displays, and touchable buttons for graphical displays.'
+    ]
+  },
+  'CP1972-9': {
+    title: 'Compressive force sensor',
+    code: 'CP1972-9',
+    description: 'Force sensors are used with some mechanical attachment for measuring weight.',
+    details: 'In this worksheet / project you learn how compressive force sensors are used to measure weight.',
+    exampleCode: `/*
+  Worksheet CP1972-9: Compressive Force Sensor
+  Measure weight using force sensor (load cell with HX711)
+*/
+
+#include <HX711.h>
+
+// HX711 amplifier for load cell
+const int DOUT_PIN = 3;
+const int SCK_PIN = 4;
+const int ZERO_PIN = 22;  // Button to zero/tare the scale
+
+HX711 scale;
+float calibrationFactor = 1000.0;  // Adjust based on your load cell
+float weight = 0.0;
+float zeroOffset = 0.0;
+
+void setup() {
+  pinMode(ZERO_PIN, INPUT_PULLUP);
+  
+  scale.begin(DOUT_PIN, SCK_PIN);
+  scale.set_scale(calibrationFactor);
+  scale.tare();  // Reset to zero
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-9: Force Sensor");
+  Serial2.println("Place object on scale, press button to zero");
+}
+
+void loop() {
+  // Zero/tare the scale when button pressed
+  if (digitalRead(ZERO_PIN) == LOW) {
+    scale.tare();
+    Serial2.println("Scale zeroed!");
+    delay(500);
+  }
+  
+  // Read weight
+  weight = scale.get_units(10);  // Average of 10 readings
+  
+  // Display weight
+  Serial2.print("Weight: ");
+  Serial2.print(weight, 2);
+  Serial2.println(" kg");
+  
+  delay(200);
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'Connect a load cell with HX711 amplifier to pins 3 and 4.',
+      'Make sure you understand how the program works. To start with you can compress the sensors to get a measurement.'
+    ],
+    challenges: [
+      'Make a mechanical rig that compresses the sensor',
+      'Modify the program to make a weighing scale with the following characteristics:',
+      'Force sensor with a platform',
+      'A display showing the weight of the object',
+      'A zero switch or touch object'
+    ],
+    hints: [
+      'Review the worksheets in Introduction to microcontrollers where you will find examples of touchable buttons for graphical displays.'
+    ]
+  },
+  'CP1972-10': {
+    title: 'Strain sensor',
+    code: 'CP1972-10',
+    description: 'Strain sensors are extensively used to measure the force in beams and mechanical systems. The choice of compressive or strain sensors is governed by the mechanical properties of the system being measured.',
+    details: 'In this worksheet / project you learn how strain sensors are used to forces in beams.',
+    exampleCode: `/*
+  Worksheet CP1972-10: Strain Sensor
+  Measure strain/force in beams using strain gauge
+*/
+
+#include <HX711.h>
+
+// HX711 amplifier for strain gauge
+const int DOUT_PIN = 3;
+const int SCK_PIN = 4;
+const int LED_PIN = 13;  // LED indicator for strain detection
+
+HX711 scale;
+float calibrationFactor = 1000.0;
+float strain = 0.0;
+float threshold = 100.0;  // Strain threshold
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);
+  
+  scale.begin(DOUT_PIN, SCK_PIN);
+  scale.set_scale(calibrationFactor);
+  scale.tare();  // Zero the sensor
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-10: Strain Sensor");
+}
+
+void loop() {
+  // Read strain value
+  strain = scale.get_units(10);  // Average of 10 readings
+  
+  // Indicate when strain exceeds threshold
+  if (abs(strain) > threshold) {
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
+  }
+  
+  // Display strain value
+  Serial2.print("Strain: ");
+  Serial2.print(strain, 2);
+  Serial2.print(" | Threshold: ");
+  Serial2.print(threshold, 2);
+  Serial2.print(" | Status: ");
+  Serial2.println(abs(strain) > threshold ? "EXCEEDED" : "OK");
+  
+  delay(200);
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'Connect a strain gauge with HX711 amplifier to pins 3 and 4.',
+      'Make sure you understand how the program works. To start with you can activate the sensor with your hands to get a measurement.'
+    ],
+    challenges: [
+      'Create a project using strain sensors to measure forces in beams or mechanical systems.'
+    ],
+    hints: [
+      'Review the worksheets in Introduction to microcontrollers where you will find examples of touchable buttons for graphical displays.'
+    ]
+  },
+  'CP1972-11': {
+    title: 'Pressure sensor',
+    code: 'CP1972-11',
+    description: 'Pressure sensors are used extensively in the automotive industry for tyre pressure monitoring in vehicles, in carburettors, and exhaust systems.',
+    details: 'In this worksheet / project you learn how to use pressure sensors in microcontroller circuits.',
+    exampleCode: `/*
+  Worksheet CP1972-11: Pressure Sensor
+  Read pressure values from analog pressure sensor
+*/
+
+const int PRESSURE_SENSOR_PIN = A0;  // Analog pressure sensor
+const int LED_PIN = 13;              // LED indicator
+const int TARGET_PRESSURE_PIN = A1;   // Potentiometer for target pressure
+
+float pressure = 0.0;        // Pressure in PSI (or kPa)
+float targetPressure = 50.0; // Target pressure
+int pressureRaw = 0;
+
+void setup() {
+  pinMode(PRESSURE_SENSOR_PIN, INPUT);
+  pinMode(TARGET_PRESSURE_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  
+  Serial2.begin(115200);
+  delay(2000);
+  Serial2.println("Worksheet CP1972-11: Pressure Sensor");
+}
+
+void loop() {
+  // Read pressure sensor (0-1023)
+  pressureRaw = analogRead(PRESSURE_SENSOR_PIN);
+  
+  // Convert to pressure (calibrate based on your sensor)
+  // Example: 0-1023 maps to 0-100 PSI
+  pressure = map(pressureRaw, 0, 1023, 0, 1000) / 10.0;  // Convert to PSI
+  
+  // Read target pressure from potentiometer
+  int potValue = analogRead(TARGET_PRESSURE_PIN);
+  targetPressure = map(potValue, 0, 1023, 0, 1000) / 10.0;
+  
+  // Control LED when pressure exceeds target
+  if (pressure > targetPressure) {
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
+  }
+  
+  // Display values
+  Serial2.print("Pressure: ");
+  Serial2.print(pressure, 1);
+  Serial2.print(" PSI | Target: ");
+  Serial2.print(targetPressure, 1);
+  Serial2.print(" PSI | Status: ");
+  Serial2.println(pressure > targetPressure ? "HIGH" : "OK");
+  
+  delay(200);
+}`,
+    tasks: [
+      'Load the example code and upload it to your board.',
+      'Connect a pressure sensor to analog pin A0.',
+      'Make sure you understand how the program works. To start with you can blow, or suck, on the sensor to make sure it works.'
+    ],
+    challenges: [
+      'Get hold of a syringe style pump and hose to attach to the sensor.',
+      'Modify the program to make a pressure measuring system with the following characteristics:',
+      'Microcontroller system, sensor, pump and hose',
+      'A display of pressure rate, set flow rate and pump status',
+      'A graph showing flow rate variation over time - refreshing every 30 seconds.',
+      'An LED that lights up when the target flow rate is over run',
+      'A way of altering the set flow rate with either switches or graphical display touch areas "+" and "-".'
+    ],
+    hints: [
+      'Review the worksheets in Introduction to microcontrollers where you will find examples of graphs and graphical displays, and touchable buttons for graphical displays.'
+    ]
+  },
+  // CP4436 Worksheets
+  'CP4436-1': {
+    title: 'Beginning hardware interfacing - PC to hardware',
+    code: 'CP4436-1',
+    description: 'Traditional electronic control panels take a lot of putting together. It is far easier to create a virtual control panel on a PC link that to some low cost interface - like an Arduino Uno.',
+    details: 'In this worksheet you learn how you can use a PC to control and monitor the state I/O lines on an Embedded device.',
+    videoUrl: 'https://youtu.be/uWSrXF2Y3M4',
+    tasks: [
+      'Watch the video "PC Developer first USB project" on the Flowcode YouTube site.',
+      'For this learning package there will be two programs: Embedded and PC Developer.',
+      'Load the file "First USB - PIC" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.',
+      'Load the file "First USB - PC". Set up the USART com port to the Embedded USB connection. Select DEBUG->RUN.',
+      'The embedded program looks at the status of a switch on the microcontroller and sends this as a 1 or a 0 to the PC.',
+      'The PC program looks at the USB port for data: in this case a 1 or a 0, and it alters the status of an on-screen LED accordingly.'
+    ],
+    challenges: [
+      'Alter the Embedded program so that it sends the value of a potentiometer - between 0 and 255 - to the PC.',
+      'Alter the PC program so that it receives a single number and shows it on a display.'
+    ],
+    hints: [
+      'Embedded program: Set up a new variable - POTVOLT - with Type Byte. Use the GetVoltage macro to read the potentiometer input as a voltage into POTVOLT. Use the UART Sendnumber command to send this to the PC via USB.',
+      'PC program: Put a Circular Gauge component on the panel. This takes variables of Type Float - not just a simple byte. Create a new variable FloatPot type Float. You will need to assign this to the value of the incoming PotVolt variable with a command like: FloatPot = FLOAT PotVolt. Use the Circular Gauge to display the incoming value.'
+    ]
+  },
+  'CP4436-2': {
+    title: 'Bidirectional hardware control',
+    code: 'CP4436-2',
+    description: 'In practice most Human Machine Interfaces need bidirectional transfer of information - in this case using the USB lead.',
+    details: 'In this worksheet you implement your first proper HMI.',
+    videoUrl: 'https://youtu.be/DCghD8VH_a4',
+    tasks: [
+      'Watch the video "PC Developer third USB project" on the Flowcode YouTube site.',
+      'For this worksheet there will be two programs: Embedded and PC Developer.',
+      'Load the file "Third USB - PIC" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.',
+      'Open a 2nd Flowcode Window and Load the file "Third USB - PC". Set up the USART com port to the Embedded USB connection. Select DEBUG->RUN.',
+      'This is a bidirectional data transfer system: both the PC and the embedded system look for the status of a switch locally and send it via USB. Each system then looks for incoming data and puts it on a LED.'
+    ],
+    challenges: [
+      'For the embedded system: Develop the program so that it reads the value of a potentiometer and transmits it as a number via USB to the PC. Develop the program so that it receives a number in the range 0 - 255 and displays it on the local LCD display.',
+      'For the PC system: Develop the program so that it reads the number and publishes it on a gauge. Develop the program so that it reads the value of a circular knob and transmits if via USB.'
+    ],
+    hints: [
+      'Use UART Sendnumber to send data from embedded to PC.',
+      'Use UART Receive to get data from PC to embedded.',
+      'Make sure both programs are running and connected to the same COM port.',
+      'Test bidirectional communication by sending data both ways simultaneously.'
+    ]
+  },
+  'CP4436-3': {
+    title: 'JSON encoding',
+    code: 'CP4436-3',
+    description: 'As you get larger amounts of data going between a PC and an embedded system, tracking each bit of data in a packet gets harder. The JSON encoding scheme makes data management much easier.',
+    details: 'In this worksheet you learn how the JSON system works.',
+    videoUrl: 'https://youtu.be/liKAzXWhHyU',
+    tasks: [
+      'Watch the video "PC Developer program to monitor temperature and humidity on the PC" on the Flowcode YouTube site.',
+      'For this worksheet there will be two programs: Embedded and PC Developer.',
+      'Load the file "Temp Hum JSON - Ard" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.',
+      'Load the file "Temp Hum JSON - PC". Set up the USART com port to the Embedded USB connection. Select DEBUG->RUN.',
+      'This program uses JSON encoding to send temperature data to the PC via the USB lead.',
+      'Use the Console to see the incoming data from the Embedded system - this allows you to see the JSON data packet structure.'
+    ],
+    challenges: [
+      'Flowcode Embedded: Modify the program so that the status of two switches are also transmitted with in JSON packet.',
+      'Flowcode PC developer: modify the program to include two panel switches that reflect the status of the switches on the hardware.',
+      'Add a text box that shows the value of the Humidity data sent in the JSON packet.'
+    ],
+    hints: [
+      'Embedded: Add two switches to the Embedded panel and two Type Byte variables. Associate the value of the variables with the state of the switches. Add these to the JSON packet.',
+      'PC Developer: Add two LEDs to the PC Developer panel. Extract the value of the switches from the incoming JSON packet. Alter the state of the LEDs accordingly.'
+    ]
+  },
+  'CP4436-4': {
+    title: 'Full PC - Embedded project',
+    code: 'CP4436-4',
+    description: 'Once you understand JSON then larger bidirectional control and monitoring projects are just larger programs.',
+    details: 'In this worksheet you establish quite a significant PC control and monitoring system that you can adapt for your own projects.',
+    videoUrl: 'https://youtu.be/YxShbPy_JJE',
+    tasks: [
+      'Watch the video "PC Developer full USB project" on the Flowcode YouTube site.',
+      'For this worksheet there will be two programs: Embedded and PC Developer.',
+      'Load the file "Full USB project - Ard" into Flowcode. Set up the hardware appropriately and compile this to the microcontroller.',
+      'Load the file "Full USB project - PC". Set up the USART com port to the Embedded USB connection. Select DEBUG->RUN.',
+      'This program uses JSON encoding to send data to and from the Embedded system and the PC to form a quite comprehensive Human Machine Interface.',
+      'In PC Developer use the Console to see the incoming data from the Embedded system whilst altering the status of the Embedded system IO. The console allows you to see the JSON data packet structure.'
+    ],
+    challenges: [
+      'Flowcode Embedded: add a DC motor to the Embedded system. Alter the program so that the speed is controlled from the PC Developer program. Alter the program so that one of the PC Developer switches controls the direction of the motor.',
+      'Flowcode PC Developer: Set the cursor to a new line and print the value of HUMINT'
+    ],
+    hints: [
+      'Add a motors component to the Embedded panel. Use the incoming data and the DC motor hardware macros to trap incoming data and make appropriate adjustments.',
+      'An issue with this system is the timing between the Embedded System and the PC Developer system. In practice this is better controlled with an interrupt to monitor incoming communications on the USB port and a circular buffer to store data.'
+    ]
   }
 };
 
 // Load and display curriculum
+// Global state for curriculum navigation
+let currentCurriculumCode = null;
+
+// Curriculum file mapping
+const curriculumFiles = {
+  'CP4807': 'curriculum1.txt',
+  'CP0507': 'CP0507 - Motors and microconrtollers.txt',
+  'CP1972': 'CP1972 - Sensors and microcontrollers.txt',
+  'CP4436': 'CP4436 - PC and web interfacing.txt'
+};
+
+// Level mapping for different curriculum formats
+const levelMapping = {
+  'Bronze': 'bronze',
+  'Silver': 'silver',
+  'Gold': 'gold',
+  'Pass': 'bronze',
+  'Pass +': 'silver',
+  'Distinction': 'gold'
+};
+
+// Parser functions removed - using manual data instead
+async function loadCurriculumFromFiles() {
+  // Manual data is already loaded in curriculumData and worksheetContent
+  return Promise.resolve();
+}
+
 function loadCurriculum() {
   const content = document.getElementById('curriculum-content');
   if (!content) return;
 
+  // Hide worksheet viewer if visible
+  const worksheetViewer = document.getElementById('worksheet-viewer');
+  const curriculumListEl = document.getElementById('curriculum-list');
+  if (worksheetViewer) worksheetViewer.style.display = 'none';
+  if (curriculumListEl) curriculumListEl.style.display = 'block';
+
   content.innerHTML = '';
+
+  // Show top-level curriculum list
+  curriculumList.forEach(curriculum => {
+    const curriculumDiv = document.createElement('div');
+    curriculumDiv.className = 'curriculum-item';
+    curriculumDiv.innerHTML = `
+      <div class="curriculum-item-icon">📚</div>
+      <div class="curriculum-item-info">
+        <div class="curriculum-item-code">${curriculum.code}</div>
+        <div class="curriculum-item-title">${curriculum.title}</div>
+      </div>
+    `;
+    curriculumDiv.addEventListener('click', () => selectCurriculum(curriculum.code));
+    content.appendChild(curriculumDiv);
+  });
+}
+
+// Select a curriculum and show its worksheets
+function selectCurriculum(curriculumCode) {
+  currentCurriculumCode = curriculumCode;
+  const content = document.getElementById('curriculum-content');
+  if (!content) return;
+
+  // Hide worksheet viewer if visible, show curriculum list
+  const worksheetViewer = document.getElementById('worksheet-viewer');
+  const curriculumListEl = document.getElementById('curriculum-list');
+  if (worksheetViewer) worksheetViewer.style.display = 'none';
+  if (curriculumListEl) curriculumListEl.style.display = 'block';
+
+  content.innerHTML = '';
+
+  const curriculum = curriculumList.find(c => c.code === curriculumCode);
+  if (!curriculum) return;
+
+  // Add back button
+  const backButton = document.createElement('div');
+  backButton.className = 'curriculum-back-button';
+  backButton.innerHTML = '← Back to Curriculums';
+  backButton.addEventListener('click', () => {
+    currentCurriculumCode = null;
+    loadCurriculum();
+  });
+  content.appendChild(backButton);
+
+  // Add curriculum header
+  const header = document.createElement('div');
+  header.className = 'curriculum-selected-header';
+  header.innerHTML = `
+    <div class="curriculum-selected-code">${curriculum.code}</div>
+    <div class="curriculum-selected-title">${curriculum.title}</div>
+  `;
+  content.appendChild(header);
+
+  // Get worksheets for this curriculum
+  const worksheets = curriculumData[curriculumCode];
+  if (!worksheets) return;
 
   // Create levels
   const levels = [
@@ -1350,17 +2711,20 @@ function loadCurriculum() {
   ];
 
   levels.forEach(level => {
+    const levelWorksheets = worksheets[level.key];
+    if (!levelWorksheets || levelWorksheets.length === 0) return;
+
     const levelDiv = document.createElement('div');
     levelDiv.className = 'curriculum-level';
 
-    const header = document.createElement('div');
-    header.className = `curriculum-level-header ${level.class}`;
-    header.innerHTML = `<span class="curriculum-level-title">${level.title}</span>`;
+    const headerEl = document.createElement('div');
+    headerEl.className = `curriculum-level-header ${level.class}`;
+    headerEl.innerHTML = `<span class="curriculum-level-title">${level.title}</span>`;
 
     const lessonsDiv = document.createElement('div');
     lessonsDiv.className = 'curriculum-lessons';
 
-    curriculumData[level.key].forEach(lesson => {
+    levelWorksheets.forEach(lesson => {
       const lessonDiv = document.createElement('div');
       lessonDiv.className = 'curriculum-lesson';
       lessonDiv.innerHTML = `
@@ -1372,7 +2736,7 @@ function loadCurriculum() {
       lessonsDiv.appendChild(lessonDiv);
     });
 
-    levelDiv.appendChild(header);
+    levelDiv.appendChild(headerEl);
     levelDiv.appendChild(lessonsDiv);
     content.appendChild(levelDiv);
   });
@@ -1390,13 +2754,30 @@ function selectLesson(lesson, level, eventElement) {
     eventElement.classList.add('active');
   }
 
+  // Hide curriculum list and show worksheet viewer
+  const curriculumListEl = document.getElementById('curriculum-list');
+  if (curriculumListEl) curriculumListEl.style.display = 'none';
+
   // Display worksheet content
   displayWorksheet(lesson.number);
 }
 
 // Display worksheet content
 function displayWorksheet(worksheetNumber) {
-  const worksheet = worksheetContent[worksheetNumber];
+  // Try to find worksheet by number in current curriculum
+  let worksheet = null;
+
+  if (currentCurriculumCode) {
+    // Try curriculum-specific key first (e.g., "CP4807-1")
+    const worksheetKey = `${currentCurriculumCode}-${worksheetNumber}`;
+    worksheet = worksheetContent[worksheetKey];
+  }
+
+  // Fallback to number-only key (for CP4807 compatibility with existing data)
+  if (!worksheet) {
+    worksheet = worksheetContent[worksheetNumber];
+  }
+
   if (!worksheet) {
     showUploadStatus('info', `Worksheet ${worksheetNumber} content is being prepared.`);
     return;
@@ -1479,8 +2860,14 @@ function displayWorksheet(worksheetNumber) {
   const loadCodeBtn = contentEl.querySelector('.worksheet-load-code');
   if (loadCodeBtn && monacoEditor) {
     loadCodeBtn.addEventListener('click', () => {
-      const code = loadCodeBtn.getAttribute('data-code');
+      // Get the code from data attribute and unescape HTML entities
+      let code = loadCodeBtn.getAttribute('data-code');
       if (code && monacoEditor) {
+        // Unescape HTML entities
+        const div = document.createElement('div');
+        div.innerHTML = code;
+        code = div.textContent || div.innerText || code;
+        
         monacoEditor.setValue(code);
         closeWorksheet();
         showUploadStatus('success', 'Example code loaded into editor');
@@ -1520,6 +2907,13 @@ function closeWorksheet() {
   document.querySelectorAll('.curriculum-lesson').forEach(el => {
     el.classList.remove('active');
   });
+
+  // If we have a current curriculum, show its worksheets, otherwise show curriculum list
+  if (currentCurriculumCode) {
+    selectCurriculum(currentCurriculumCode);
+  } else {
+    loadCurriculum();
+  }
 }
 
 // Tab switching functionality
@@ -1554,7 +2948,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check Arduino CLI
   checkArduinoCLI();
   
-  // Load curriculum
+  // Load curriculum UI (data is manually coded, no file parsing needed)
   loadCurriculum();
   
   // Worksheet close button
@@ -1574,7 +2968,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners
   document.getElementById('refresh-ports-btn').addEventListener('click', refreshPorts);
-  document.getElementById('upload-btn').addEventListener('click', uploadCode);
+  // Setup upload button - initially disabled until connection is established
+  const uploadBtn = document.getElementById('upload-btn');
+  if (uploadBtn) {
+    uploadBtn.disabled = true; // Disabled by default until board is connected
+    uploadBtn.addEventListener('click', uploadCode);
+  }
   document.getElementById('save-btn').addEventListener('click', saveCode);
   document.getElementById('load-btn').addEventListener('click', loadCode);
   document.getElementById('clear-monitor-btn').addEventListener('click', clearSerialMonitor);

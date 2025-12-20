@@ -661,7 +661,6 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: join(__dirname, 'preload.js'),
       webSecurity: false, // Allow Web Serial API
       enableBlinkFeatures: 'Serial', // Enable Web Serial API
       experimentalFeatures: true,
