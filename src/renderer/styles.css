@@ -700,6 +700,16 @@ body {
   cursor: not-allowed;
 }
 
+.btn-upload.flash-warning {
+  animation: flashYellow 0.5s ease-in-out 3;
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
+}
+
+.btn-upload.flash-warning {
+  animation: flashYellow 0.5s ease-in-out 3;
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
+}
+
 .upload-note {
   margin-top: 8px;
   font-size: 11px;

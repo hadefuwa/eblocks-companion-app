@@ -1,6 +1,6 @@
 {
   "name": "eblocks-companion-app",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "description": "Companion app for E-Blocks 3 - Connect, upload code, and monitor serial output",
   "main": "src/wrapper.cjs",
   "scripts": {

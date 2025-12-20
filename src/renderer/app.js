@@ -285,6 +285,71 @@ function flashPortWarning() {
   }
 }
 
+// Get the reason why upload is disabled
+function getUploadDisabledReason() {
+  const portSelect = document.getElementById('com-port-select');
+  const port = portSelect ? portSelect.value : null;
+  const boardSelect = document.getElementById('editor-board-select');
+  const selectedBoardType = boardSelect ? boardSelect.value : null;
+  
+  // Check if port is selected
+  if (!port || port === '') {
+    return 'no-port';
+  }
+  
+  // Check connection status
+  const isFullyConnected = isConnected && selectedPort && 
+    (selectedBoardType === 'pic' ? selectedPort !== null : 
+     (detectedBoardFQBN && (
+       (selectedBoardType === 'arduino:avr:mega' && detectedBoardFQBN.startsWith('arduino:avr:mega')) ||
+       (selectedBoardType === 'esp32:esp32:esp32' && detectedBoardFQBN.startsWith('esp32:esp32')) ||
+       (detectedBoardFQBN === selectedBoardType || detectedBoardFQBN.startsWith(selectedBoardType + ':'))
+     )));
+  
+  if (!isFullyConnected) {
+    return 'board-disconnected';
+  }
+  
+  return null; // Not disabled
+}
+
+// Flash upload button warning
+function flashUploadWarning() {
+  const uploadBtn = document.getElementById('upload-btn');
+  const uploadStatus = document.getElementById('upload-status');
+  
+  if (!uploadBtn || !uploadStatus) return;
+  
+  const reason = getUploadDisabledReason();
+  if (!reason) return; // Button is enabled, no warning needed
+  
+  // Determine message based on reason
+  let message = '';
+  if (reason === 'no-port') {
+    message = 'No COM port selected';
+  } else if (reason === 'board-disconnected') {
+    message = 'E-Blocks board disconnected';
+  }
+  
+  // Add flash class to button
+  uploadBtn.classList.add('flash-warning');
+  
+  // Show warning message
+  uploadStatus.className = 'upload-status error';
+  uploadStatus.textContent = message;
+  uploadStatus.style.display = 'block';
+  
+  // Remove flash class after animation completes
+  setTimeout(() => {
+    uploadBtn.classList.remove('flash-warning');
+  }, 1500);
+  
+  // Hide warning message after animation
+  setTimeout(() => {
+    uploadStatus.style.display = 'none';
+  }, 2000);
+}
+
 // Upload code
 async function uploadCode() {
   if (!monacoEditor) {
@@ -2972,7 +3037,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const uploadBtn = document.getElementById('upload-btn');
   if (uploadBtn) {
     uploadBtn.disabled = true; // Disabled by default until board is connected
-    uploadBtn.addEventListener('click', uploadCode);
+    uploadBtn.addEventListener('click', (e) => {
+      if (uploadBtn.disabled) {
+        flashUploadWarning();
+        e.preventDefault();
+        return;
+      }
+      uploadCode();
+    });
+    
+    // Add hover handler for disabled state
+    uploadBtn.addEventListener('mouseenter', () => {
+      if (uploadBtn.disabled) {
+        flashUploadWarning();
+      }
+    });
   }
   document.getElementById('save-btn').addEventListener('click', saveCode);
   document.getElementById('load-btn').addEventListener('click', loadCode);
