@@ -168,12 +168,79 @@ async function checkArduinoCLI() {
     const response = await fetch('/api/check-cli');
     const result = await response.json();
     if (result.success && result.installed) {
-      console.log('Arduino CLI:', result.version);
+      console.log('✓ Arduino CLI found:', result.version);
+      console.log('  Path:', result.path);
     } else {
-      console.warn('Arduino CLI not found');
+      console.error('✗ Arduino CLI not found');
+      console.error('  Error:', result.error);
+      if (result.details) {
+        console.error('  Details:', {
+          resourcesPath: result.details.resourcesPath,
+          appPath: result.details.appPath,
+          isPackaged: result.details.isPackaged,
+          platform: result.details.platform,
+          arch: result.details.arch
+        });
+      }
     }
   } catch (error) {
     console.error('Arduino CLI check error:', error);
+  }
+}
+
+// Install E-Blocks drivers
+async function installDrivers() {
+  const btn = document.getElementById('install-drivers-btn');
+  const statusDiv = document.getElementById('driver-status');
+  
+  if (!btn || !statusDiv) {
+    console.error('Driver installation UI elements not found');
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Installing...';
+  statusDiv.style.display = 'block';
+  statusDiv.className = 'driver-status driver-status-info';
+  statusDiv.textContent = 'Installing E-Blocks USB drivers... This may take a moment.';
+  
+  try {
+    const response = await fetch('/api/install-drivers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      statusDiv.className = 'driver-status driver-status-success';
+      statusDiv.textContent = result.message || 'Drivers installed successfully! Please reconnect your E-Blocks board and refresh ports.';
+      btn.textContent = '✓ Installed';
+      
+      // Refresh ports after a short delay
+      setTimeout(() => {
+        refreshPorts();
+      }, 2000);
+      
+      // Reset button after 5 seconds
+      setTimeout(() => {
+        btn.textContent = '🔧 Install Drivers';
+        btn.disabled = false;
+      }, 5000);
+    } else {
+      statusDiv.className = 'driver-status driver-status-error';
+      statusDiv.textContent = result.error || 'Failed to install drivers. Please try running the installer manually from the drivers folder.';
+      btn.textContent = '🔧 Install Drivers';
+      btn.disabled = false;
+    }
+  } catch (error) {
+    console.error('Driver installation error:', error);
+    statusDiv.className = 'driver-status driver-status-error';
+    statusDiv.textContent = 'Error installing drivers: ' + error.message;
+    btn.textContent = '🔧 Install Drivers';
+    btn.disabled = false;
   }
 }
 
@@ -3090,6 +3157,12 @@ function initializeApp() {
   // Event listeners
   try {
     document.getElementById('refresh-ports-btn').addEventListener('click', refreshPorts);
+    
+    // Driver installation button
+    const installDriversBtn = document.getElementById('install-drivers-btn');
+    if (installDriversBtn) {
+      installDriversBtn.addEventListener('click', installDrivers);
+    }
     
     // Setup upload button - initially disabled until connection is established
     const uploadBtn = document.getElementById('upload-btn');

@@ -1,5 +1,5 @@
 import { createRequire } from 'module'
-import { join, dirname } from 'path'
+import { join, dirname, normalize } from 'path'
 import { fileURLToPath } from 'url'
 
 const require = createRequire(import.meta.url)
@@ -140,23 +140,82 @@ async function startServer() {
     // First, try to find bundled Arduino CLI
     if (app.isPackaged) {
       // In packaged app, look in resources folder
+      // process.resourcesPath points to the resources/ folder
+      // extraResources copies files to process.resourcesPath/arduino-cli/
       const resourcesPath = process.resourcesPath || app.getAppPath()
       const platform = process.platform
       const arch = process.arch === 'arm64' ? 'arm64' : 'x64'
       const exeName = platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli'
-      const bundledPath = join(resourcesPath, 'resources', 'arduino-cli', platform, arch, exeName)
       
-      try {
-        // Check if bundled CLI exists and is executable
-        const { access, constants } = await import('fs/promises')
-        await access(bundledPath, constants.F_OK)
-        // Test if it works
-        await execAsync(`"${bundledPath}" version`)
-        console.log(`Using bundled Arduino CLI: ${bundledPath}`)
-        return `"${bundledPath}"`
-      } catch (error) {
-        console.log('Bundled Arduino CLI not found, trying system PATH...')
+      // Try multiple possible paths
+      const possiblePaths = [
+        // Primary path: resourcesPath/arduino-cli/platform/arch/exeName
+        join(resourcesPath, 'arduino-cli', platform, arch, exeName),
+        // Alternative: resourcesPath/arduino-cli/exeName (flat structure)
+        join(resourcesPath, 'arduino-cli', exeName),
+        // Alternative: app.getAppPath() relative paths
+        join(app.getAppPath(), '..', 'resources', 'arduino-cli', platform, arch, exeName),
+        join(app.getAppPath(), '..', 'resources', 'arduino-cli', exeName),
+        // Alternative: process.resourcesPath with different structure
+        join(process.resourcesPath, '..', 'resources', 'arduino-cli', platform, arch, exeName),
+      ]
+      
+      console.log('=== Arduino CLI Search (Packaged) ===')
+      console.log('process.resourcesPath:', process.resourcesPath)
+      console.log('app.getAppPath():', app.getAppPath())
+      console.log('process.execPath:', process.execPath)
+      
+      // Try each possible path
+      for (const bundledPathRaw of possiblePaths) {
+        const bundledPath = normalize(bundledPathRaw)
+        console.log(`Trying path: ${bundledPath}`)
+        console.log(`File exists? ${existsSync(bundledPath)}`)
+        
+        if (existsSync(bundledPath)) {
+          try {
+            // Check if bundled CLI exists and is executable
+            const { access, constants } = await import('fs/promises')
+            await access(bundledPath, constants.F_OK)
+            console.log('File access check passed')
+            // Test if it works
+            const versionResult = await execAsync(`"${bundledPath}" version`)
+            console.log('Version command output:', versionResult.stdout)
+            console.log(`✓ Using bundled Arduino CLI: ${bundledPath}`)
+            return bundledPath
+          } catch (error) {
+            console.error(`✗ Path exists but execution failed: ${error.message}`)
+            continue // Try next path
+          }
+        }
       }
+      
+      // If we get here, none of the paths worked - list what's actually there
+      console.error('✗ Arduino CLI not found at any expected path')
+      try {
+        const { readdir, stat } = await import('fs/promises')
+        console.log('Listing resourcesPath contents...')
+        const resourcesContents = await readdir(resourcesPath)
+        console.log('Contents of resourcesPath:', resourcesContents)
+        
+        for (const item of resourcesContents) {
+          const itemPath = join(resourcesPath, item)
+          const stats = await stat(itemPath)
+          if (stats.isDirectory()) {
+            const subContents = await readdir(itemPath)
+            console.log(`  ${item}/:`, subContents)
+          }
+        }
+        
+        // Also check parent directory
+        const parentPath = join(resourcesPath, '..')
+        console.log('Listing parent directory...')
+        const parentContents = await readdir(parentPath)
+        console.log('Contents of parent:', parentContents)
+      } catch (listError) {
+        console.error('Could not list directories:', listError.message)
+      }
+      
+      console.log('Bundled Arduino CLI not found, trying system PATH...')
     } else {
       // In development, check local resources folder
       const platform = process.platform
@@ -169,7 +228,7 @@ async function startServer() {
         await access(localPath, constants.F_OK)
         await execAsync(`"${localPath}" version`)
         console.log(`Using local Arduino CLI: ${localPath}`)
-        return `"${localPath}"`
+        return localPath
       } catch (error) {
         console.log('Local Arduino CLI not found, trying system PATH...')
       }
@@ -592,9 +651,12 @@ async function startServer() {
   })
 
   serverApp.get('/api/check-cli', async (req, res) => {
+    console.log('=== /api/check-cli called ===')
     try {
       const arduinoCLI = await findArduinoCLI()
+      console.log('findArduinoCLI returned:', arduinoCLI)
       const { stdout } = await execAsync(`"${arduinoCLI}" version`)
+      console.log('Arduino CLI version command succeeded')
       res.json({ 
         success: true, 
         installed: true, 
@@ -602,10 +664,27 @@ async function startServer() {
         path: arduinoCLI
       })
     } catch (error) {
+      console.error('=== Arduino CLI check failed ===')
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+      // Include more details in the error response
+      const errorDetails = {
+        message: error.message,
+        stack: error.stack,
+        resourcesPath: process.resourcesPath,
+        appPath: app.getAppPath(),
+        isPackaged: app.isPackaged,
+        platform: process.platform,
+        arch: process.arch,
+        execPath: process.execPath,
+        cwd: process.cwd()
+      }
+      console.error('Error details:', JSON.stringify(errorDetails, null, 2))
       res.json({ 
         success: false, 
         installed: false, 
-        error: error.message 
+        error: error.message,
+        details: errorDetails
       })
     }
   })
@@ -738,6 +817,87 @@ async function startServer() {
     serialDataBuffers.set(connectionId, [])
     
     res.json({ success: true, data })
+  })
+
+  // Install E-Blocks drivers
+  serverApp.post('/api/install-drivers', async (req, res) => {
+    try {
+      const resourcesPath = process.resourcesPath || app.getAppPath()
+      const driversPath = app.isPackaged 
+        ? join(resourcesPath, 'drivers')
+        : join(__dirname, '../drivers')
+      
+      console.log('=== Installing E-Blocks Drivers ===')
+      console.log('Drivers path:', driversPath)
+      
+      // Check if drivers exist
+      if (!existsSync(driversPath)) {
+        return res.status(404).json({
+          success: false,
+          error: 'Drivers folder not found',
+          path: driversPath
+        })
+      }
+      
+      // Determine which installer to use based on architecture
+      const arch = process.arch === 'arm64' ? 'arm64' : (process.arch === 'x64' ? 'x64' : 'x86')
+      const installerName = arch === 'x64' 
+        ? 'E-blocks2_64bit_installer.exe'
+        : 'E-blocks2_32bit_installer.exe'
+      const installerPath = join(driversPath, installerName)
+      
+      console.log('Looking for installer:', installerPath)
+      console.log('Installer exists?', existsSync(installerPath))
+      
+      if (!existsSync(installerPath)) {
+        // Fallback: try using dpinst.exe if available
+        const dpinstPath = join(driversPath, 'dpinst.exe')
+        const infPath = join(driversPath, 'inf')
+        
+        if (existsSync(dpinstPath) && existsSync(infPath)) {
+          console.log('Using dpinst.exe to install drivers')
+          const { stdout, stderr } = await execAsync(`"${dpinstPath}" /S /SE /SW /SA`, {
+            cwd: driversPath,
+            timeout: 60000
+          })
+          return res.json({
+            success: true,
+            message: 'Drivers installed successfully',
+            method: 'dpinst',
+            output: stdout,
+            warnings: stderr
+          })
+        }
+        
+        return res.status(404).json({
+          success: false,
+          error: 'Driver installer not found',
+          expectedPath: installerPath,
+          driversPath: driversPath
+        })
+      }
+      
+      // Run the installer (silent mode)
+      console.log('Running installer:', installerPath)
+      const { stdout, stderr } = await execAsync(`"${installerPath}" /S`, {
+        cwd: driversPath,
+        timeout: 120000
+      })
+      
+      res.json({
+        success: true,
+        message: 'Drivers installed successfully. Please reconnect your E-Blocks board.',
+        output: stdout,
+        warnings: stderr
+      })
+    } catch (error) {
+      console.error('Driver installation error:', error)
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to install drivers',
+        details: error.stack
+      })
+    }
   })
 
   // Send data to serial port

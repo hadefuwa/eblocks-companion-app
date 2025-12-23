@@ -42,6 +42,7 @@
       "src/**/*",
       "assets/**/*",
       "resources/**/*",
+      "!resources/arduino-cli/**/*",
       "package.json",
       "node_modules/monaco-editor/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
@@ -56,11 +57,20 @@
       "!**/{appveyor.yml,.travis.yml,circle.yml}",
       "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
     ],
-    "extraFiles": [
+    "extraResources": [
       {
         "from": "resources/arduino-cli",
-        "to": "resources/arduino-cli",
-        "filter": ["**/*"]
+        "to": "arduino-cli",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "drivers",
+        "to": "drivers",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
@@ -82,7 +92,8 @@
     "asarUnpack": [
       "src/renderer/**/*",
       "assets/**/*",
-      "node_modules/monaco-editor/**/*"
+      "node_modules/monaco-editor/**/*",
+      "resources/arduino-cli/**/*"
     ]
   }
 }

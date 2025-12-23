@@ -467,6 +467,68 @@ body {
   transform: translateY(0);
 }
 
+.btn-driver {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-button-border);
+  border-radius: 6px;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-driver:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-driver:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-driver:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.driver-help {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.driver-status {
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.driver-status-info {
+  background: rgba(88, 166, 255, 0.15);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  color: #58a6ff;
+}
+
+.driver-status-success {
+  background: rgba(56, 193, 114, 0.15);
+  border: 1px solid rgba(56, 193, 114, 0.3);
+  color: #38c172;
+}
+
+.driver-status-error {
+  background: rgba(248, 81, 73, 0.15);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: #f85149;
+}
+
 .status-indicator {
   display: flex;
   align-items: center;
