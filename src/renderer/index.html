@@ -14,7 +14,54 @@
         <img src="/assets/matrix.png" alt="Matrix Logo" class="titlebar-logo">
       </div>
       <div class="titlebar-title">E-Blocks 3 Companion</div>
+      <div class="titlebar-menu">
+        <button id="menu-code-editor" class="menu-btn active">Code Editor</button>
+        <button id="menu-graphical" class="menu-btn" disabled>Graphical</button>
+        <button id="menu-shop" class="menu-btn">Shop</button>
+      </div>
     </header>
+
+    <!-- Menu Navigation Script -->
+    <script>
+      // Handle menu navigation - run immediately when DOM is ready
+      (function() {
+        function initMenuNavigation() {
+          const codeEditorBtn = document.getElementById('menu-code-editor');
+          const shopBtn = document.getElementById('menu-shop');
+          
+          if (codeEditorBtn) {
+            codeEditorBtn.addEventListener('click', () => {
+              // Already on code editor page, just ensure active state
+              codeEditorBtn.classList.add('active');
+              shopBtn?.classList.remove('active');
+            });
+          }
+          
+          if (shopBtn) {
+            shopBtn.addEventListener('click', () => {
+              window.location.href = '/shop.html';
+            });
+          }
+        }
+        
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initMenuNavigation);
+        } else {
+          initMenuNavigation();
+        }
+      })();
+    </script>
+
+    <!-- Driver Installation Banner -->
+    <div id="driver-banner" class="driver-banner" style="display: none;">
+      <div class="driver-banner-content">
+        <div class="driver-banner-icon">⚠️</div>
+        <div class="driver-banner-text">
+          <strong>E-Blocks USB drivers are not installed.</strong> Install drivers to connect your E-Blocks board.
+        </div>
+        <button id="driver-banner-install-btn" class="driver-banner-btn">Install Drivers</button>
+      </div>
+    </div>
 
     <!-- Main Container -->
     <main class="app-container">

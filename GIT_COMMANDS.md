@@ -74,3 +74,5 @@ After pushing the tag, you can:
 4. Add release notes
 5. Attach the installer file: `dist-electron/E-Blocks 3 Companion Setup 2.4.0.exe`
 
+
+

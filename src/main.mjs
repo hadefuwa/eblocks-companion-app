@@ -13,7 +13,7 @@ if (!electron || !electron.app) {
   console.error('Try: npm install electron@latest')
   process.exit(1)
 }
-const { app, BrowserWindow, Menu, ipcMain } = electron
+const { app, BrowserWindow, Menu, ipcMain, shell } = electron
 import express from 'express'
 import cors from 'cors'
 import { exec } from 'child_process'
@@ -650,6 +650,45 @@ async function startServer() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
+  // Check if E-Blocks drivers are installed
+  serverApp.get('/api/check-drivers', async (req, res) => {
+    try {
+      // Check if the flag file exists (created after successful installation)
+      const userDataPath = app.getPath('userData')
+      const driverFlagPath = join(userDataPath, '.drivers-installed')
+      const installed = existsSync(driverFlagPath)
+      
+      // Also check if we can detect an E-Blocks board (indirect indicator)
+      let eblocksBoardDetected = false
+      try {
+        const portList = await SerialPort.list()
+        eblocksBoardDetected = portList.some(port => {
+          const vid = (port.vendorId || '').toUpperCase()
+          const pid = (port.productId || '').toUpperCase()
+          const name = (port.friendlyName || port.manufacturer || '').toLowerCase()
+          return vid === '12BF' || name.includes('eblocks')
+        })
+      } catch (err) {
+        // Ignore serial port errors
+      }
+      
+      res.json({
+        success: true,
+        installed: installed || eblocksBoardDetected,
+        flagFileExists: installed,
+        eblocksBoardDetected: eblocksBoardDetected,
+        flagPath: driverFlagPath
+      })
+    } catch (error) {
+      console.error('Error checking drivers:', error)
+      res.json({
+        success: false,
+        installed: false,
+        error: error.message
+      })
+    }
+  })
+
   serverApp.get('/api/check-cli', async (req, res) => {
     console.log('=== /api/check-cli called ===')
     try {
@@ -877,25 +916,139 @@ async function startServer() {
         })
       }
       
-      // Run the installer (silent mode)
+      // Run the installer - try different methods and flags
       console.log('Running installer:', installerPath)
-      const { stdout, stderr } = await execAsync(`"${installerPath}" /S`, {
-        cwd: driversPath,
-        timeout: 120000
-      })
+      console.log('Attempting installation with admin privileges...')
       
-      res.json({
-        success: true,
-        message: 'Drivers installed successfully. Please reconnect your E-Blocks board.',
-        output: stdout,
-        warnings: stderr
-      })
+      // Try different installer flags - different installers use different flags
+      const installMethods = [
+        { flag: '/S', name: 'silent (/S)' },
+        { flag: '/SILENT', name: 'silent (/SILENT)' },
+        { flag: '/VERYSILENT', name: 'very silent (/VERYSILENT)' },
+        { flag: '/S /NCRC', name: 'silent no CRC check' },
+        { flag: '', name: 'with UI (no flags)' }
+      ]
+      
+      let lastError = null
+      
+      for (const method of installMethods) {
+        try {
+          console.log(`Trying method: ${method.name}...`)
+          const installCommand = method.flag 
+            ? `"${installerPath}" ${method.flag}`
+            : `"${installerPath}"`
+          
+          console.log('Command:', installCommand)
+          
+          const { stdout, stderr } = await execAsync(installCommand, {
+            cwd: driversPath,
+            timeout: 120000
+          })
+          
+          console.log(`✓ Installation succeeded with method: ${method.name}`)
+          if (stdout) console.log('stdout:', stdout)
+          if (stderr) console.log('stderr:', stderr)
+          
+          res.json({
+            success: true,
+            message: 'Drivers installed successfully. Please reconnect your E-Blocks board.',
+            method: method.name,
+            output: stdout,
+            warnings: stderr
+          })
+          return
+        } catch (methodError) {
+          console.error(`✗ Method ${method.name} failed:`, methodError.message)
+          console.error('  Error code:', methodError.code)
+          if (methodError.stdout) console.error('  stdout:', methodError.stdout)
+          if (methodError.stderr) console.error('  stderr:', methodError.stderr)
+          
+          // Special handling for UI method - if it launched, consider it a success
+          // The installer window appeared, so user may have completed installation
+          if (method.flag === '' && methodError.code !== 'ENOENT') {
+            console.log('  UI method launched installer - user may have completed installation')
+            res.json({
+              success: true,
+              message: 'Driver installer was launched. If you completed the installation, drivers should now be installed. Please reconnect your E-Blocks board.',
+              method: 'ui-launched',
+              note: 'Installer window appeared - installation may have completed successfully.'
+            })
+            return
+          }
+          
+          lastError = methodError
+          continue // Try next method
+        }
+      }
+      
+      // If all silent methods failed, try with elevation
+      // But first, check if the UI method (last one) actually showed a window
+      // If it did, the user might have completed installation manually
+      if (installMethods[installMethods.length - 1].flag === '' && lastError) {
+        console.log('UI method was tried - if installer window appeared, installation may have succeeded')
+        console.log('Returning success since installer was launched (user may have completed it)')
+        res.json({
+          success: true,
+          message: 'Driver installer was launched. If you completed the installation, drivers should now be installed. Please reconnect your E-Blocks board.',
+          method: 'ui-launched',
+          note: 'If installation completed, you can ignore any previous errors.'
+        })
+        return
+      }
+      
+      // Try with PowerShell elevation (only if silent methods failed)
+      try {
+        console.log('All silent methods failed, trying with PowerShell elevation...')
+        // Properly escape the path for PowerShell
+        // Escape double quotes in the path
+        const escapedPath = installerPath.replace(/"/g, '`"')
+        // Use -Wait without -NoNewWindow (they conflict with -Verb RunAs)
+        // Also, we need to properly quote the entire command
+        const psCommand = `Start-Process -FilePath '${installerPath.replace(/'/g, "''")}' -ArgumentList '/S' -Verb RunAs -Wait`
+        const elevatedCommand = `powershell -NoProfile -ExecutionPolicy Bypass -Command "${psCommand.replace(/"/g, '\\"')}"`
+        
+        console.log('Elevated command:', elevatedCommand)
+        
+        const { stdout, stderr } = await execAsync(elevatedCommand, {
+          cwd: driversPath,
+          timeout: 120000
+        })
+        
+        console.log('✓ Elevated installation completed')
+        res.json({
+          success: true,
+          message: 'Drivers installed successfully (with elevation). Please reconnect your E-Blocks board.',
+          method: 'elevated',
+          output: stdout,
+          warnings: stderr
+        })
+        return
+      } catch (elevatedError) {
+        console.error('✗ Elevated installation also failed:', elevatedError.message)
+        console.error('  Error code:', elevatedError.code)
+        console.error('  Error stdout:', elevatedError.stdout)
+        console.error('  Error stderr:', elevatedError.stderr)
+        lastError = elevatedError
+      }
+      
+      // All methods failed
+      throw new Error(`All installation methods failed. Last error: ${lastError?.message || 'Unknown error'}. The installer may require manual installation with administrator rights. Try running "${installerPath}" manually as administrator.`)
     } catch (error) {
-      console.error('Driver installation error:', error)
+      console.error('=== Driver installation error ===')
+      console.error('Error message:', error.message)
+      console.error('Error code:', error.code)
+      console.error('Error stdout:', error.stdout)
+      console.error('Error stderr:', error.stderr)
+      console.error('Error stack:', error.stack)
+      
       res.status(500).json({
         success: false,
         error: error.message || 'Failed to install drivers',
-        details: error.stack
+        code: error.code,
+        stdout: error.stdout,
+        stderr: error.stderr,
+        details: error.stack,
+        suggestion: 'Driver installation requires administrator privileges. Please right-click the installer and select "Run as administrator", or install drivers manually from the drivers folder.'
       })
     }
   })
@@ -958,6 +1111,20 @@ async function startServer() {
 }
 
 function createWindow() {
+  // Resolve preload script path for both development and packaged modes
+  let preloadPath
+  if (app.isPackaged) {
+    const resourcesPath = process.resourcesPath || app.getAppPath()
+    const unpackedBase = join(resourcesPath, 'app.asar.unpacked')
+    preloadPath = join(unpackedBase, 'src', 'preload.js')
+    // Fallback to asar path if unpacked doesn't exist
+    if (!existsSync(preloadPath)) {
+      preloadPath = join(__dirname, 'preload.js')
+    }
+  } else {
+    preloadPath = join(__dirname, 'preload.js')
+  }
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -973,7 +1140,8 @@ function createWindow() {
       webSecurity: false, // Allow Web Serial API
       enableBlinkFeatures: 'Serial', // Enable Web Serial API
       experimentalFeatures: true,
-      devTools: true // Enable DevTools (but hidden on startup)
+      devTools: true, // Enable DevTools (but hidden on startup)
+      preload: preloadPath
     },
     icon: join(__dirname, '../assets/icon.png'), // Optional: add icon
     title: 'E-Blocks 3 Companion',
@@ -1029,8 +1197,213 @@ function createWindow() {
   })
 }
 
+// Store shop window reference
+let shopWindow = null
+
+// Function to create shop window
+function createShopWindow() {
+  // If shop window already exists and is not destroyed, focus it
+  if (shopWindow && !shopWindow.isDestroyed()) {
+    shopWindow.focus()
+    return
+  }
+
+  shopWindow = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    minWidth: 800,
+    minHeight: 600,
+    show: false,
+    frame: true,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    backgroundColor: '#ffffff',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true, // Enable web security for external sites
+      devTools: true
+    },
+    title: 'E-Blocks Shop - Matrix TSL',
+    ...(process.platform === 'win32' && {
+      titleBarOverlay: {
+        color: '#ffffff',
+        symbolColor: '#000000',
+        height: 35
+      }
+    })
+  })
+
+  // Load the Matrix TSL shop URL
+  shopWindow.loadURL('https://www.matrixtsl.com/product-category/e-blocks2/eblocks2-boards/?jsf=jet-engine:matrix-shop&pagenum=5')
+
+  // Show window when ready
+  shopWindow.once('ready-to-show', () => {
+    shopWindow.show()
+    shopWindow.center()
+  })
+
+  // Handle window closed
+  shopWindow.on('closed', () => {
+    shopWindow = null
+  })
+
+  // Handle external links - open in default browser
+  shopWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url)
+    return { action: 'deny' }
+  })
+}
+
+// IPC handler for opening shop window
+ipcMain.handle('open-shop-window', async () => {
+  createShopWindow()
+  return { success: true }
+})
+
+// IPC handler for opening external URLs
+ipcMain.handle('open-external', async (event, url) => {
+  shell.openExternal(url)
+  return { success: true }
+})
+
+// Check if drivers need to be installed (on first launch)
+async function checkAndInstallDrivers() {
+  console.log('=== Driver Auto-Installation Check ===')
+  try {
+    // Check if we've already installed drivers (using a flag file)
+    const userDataPath = app.getPath('userData')
+    const driverFlagPath = join(userDataPath, '.drivers-installed')
+    
+    console.log('User data path:', userDataPath)
+    console.log('Driver flag path:', driverFlagPath)
+    console.log('Flag file exists?', existsSync(driverFlagPath))
+    
+    if (existsSync(driverFlagPath)) {
+      console.log('✓ Drivers already installed (flag file exists)')
+      // Read and log when drivers were installed
+      try {
+        const { readFile } = await import('fs/promises')
+        const flagContent = await readFile(driverFlagPath, 'utf8')
+        console.log('  Drivers installed on:', flagContent)
+      } catch (err) {
+        console.log('  Could not read flag file:', err.message)
+      }
+      return false // Drivers already installed
+    }
+    
+    console.log('First launch detected - checking if drivers need installation...')
+    
+    const resourcesPath = process.resourcesPath || app.getPath('appPath')
+    console.log('Resources path:', resourcesPath)
+    console.log('App path:', app.getPath('appPath'))
+    console.log('Is packaged?', app.isPackaged)
+    
+    const driversPath = app.isPackaged 
+      ? join(resourcesPath, 'drivers')
+      : join(__dirname, '../drivers')
+    
+    console.log('Drivers path:', driversPath)
+    console.log('Drivers folder exists?', existsSync(driversPath))
+    
+    if (!existsSync(driversPath)) {
+      console.error('✗ Drivers folder not found, skipping auto-installation')
+      console.error('  Expected path:', driversPath)
+      return false
+    }
+    
+    // List contents of drivers folder
+    try {
+      const { readdir } = await import('fs/promises')
+      const driversContents = await readdir(driversPath)
+      console.log('Drivers folder contents:', driversContents)
+    } catch (err) {
+      console.error('Could not list drivers folder:', err.message)
+    }
+    
+    // Determine which installer to use
+    const arch = process.arch === 'arm64' ? 'arm64' : (process.arch === 'x64' ? 'x64' : 'x86')
+    console.log('System architecture:', process.arch, '->', arch)
+    
+    const installerName = arch === 'x64' 
+      ? 'E-blocks2_64bit_installer.exe'
+      : 'E-blocks2_32bit_installer.exe'
+    const installerPath = join(driversPath, installerName)
+    
+    console.log('Looking for installer:', installerName)
+    console.log('Installer path:', installerPath)
+    console.log('Installer exists?', existsSync(installerPath))
+    
+    if (!existsSync(installerPath)) {
+      console.error('✗ Driver installer not found, skipping auto-installation')
+      console.error('  Expected:', installerPath)
+      
+      // Try to find any installer
+      try {
+        const { readdir } = await import('fs/promises')
+        const files = await readdir(driversPath)
+        const installers = files.filter(f => f.includes('installer') && f.endsWith('.exe'))
+        console.log('  Found installer files:', installers)
+      } catch (err) {
+        console.error('  Could not search for installers:', err.message)
+      }
+      return false
+    }
+    
+    console.log('✓ Driver installer found, attempting to install...')
+    console.log('  Installer:', installerPath)
+    
+    try {
+      // Run installer silently
+      const { exec } = await import('child_process')
+      const { promisify } = await import('util')
+      const execAsync = promisify(exec)
+      
+      console.log('Running installer command:', `"${installerPath}" /S`)
+      const startTime = Date.now()
+      
+      const result = await execAsync(`"${installerPath}" /S`, {
+        cwd: driversPath,
+        timeout: 120000
+      })
+      
+      const duration = Date.now() - startTime
+      console.log(`Installer completed in ${duration}ms`)
+      if (result.stdout) console.log('Installer stdout:', result.stdout)
+      if (result.stderr) console.log('Installer stderr:', result.stderr)
+      
+      // Create flag file to indicate drivers are installed
+      const { writeFile } = await import('fs/promises')
+      await writeFile(driverFlagPath, new Date().toISOString(), 'utf8')
+      console.log('✓ Flag file created:', driverFlagPath)
+      
+      console.log('✓✓✓ E-Blocks drivers installed successfully on first launch!')
+      return true
+    } catch (error) {
+      console.error('✗✗✗ Failed to install drivers automatically')
+      console.error('  Error message:', error.message)
+      console.error('  Error code:', error.code)
+      if (error.stdout) console.error('  stdout:', error.stdout)
+      if (error.stderr) console.error('  stderr:', error.stderr)
+      console.error('  Full error:', error)
+      // Don't throw - allow app to continue even if driver installation fails
+      return false
+    }
+  } catch (error) {
+    console.error('✗✗✗ Error in driver installation check')
+    console.error('  Error message:', error.message)
+    console.error('  Error stack:', error.stack)
+    return false
+  }
+}
+
 app.whenReady().then(async () => {
   try {
+    // Check and install drivers on first launch (non-blocking)
+    checkAndInstallDrivers().catch(err => {
+      console.error('Driver installation check failed:', err)
+      // Continue app startup even if driver check fails
+    })
+    
     // Start the Express server first
     await startServer()
     

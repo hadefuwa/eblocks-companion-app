@@ -188,21 +188,58 @@ async function checkArduinoCLI() {
   }
 }
 
+// Check if E-Blocks drivers are installed and show/hide banner
+async function checkDrivers() {
+  try {
+    const response = await fetch('/api/check-drivers');
+    const result = await response.json();
+    const banner = document.getElementById('driver-banner');
+    
+    if (!banner) {
+      console.warn('Driver banner element not found');
+      return;
+    }
+    
+    if (result.success && result.installed) {
+      // Drivers are installed - hide banner
+      banner.style.display = 'none';
+      console.log('✓ E-Blocks drivers are installed');
+    } else {
+      // Drivers not installed - show banner
+      banner.style.display = 'flex';
+      console.log('⚠ E-Blocks drivers are not installed');
+    }
+  } catch (error) {
+    console.error('Driver check error:', error);
+    // On error, show banner to be safe
+    const banner = document.getElementById('driver-banner');
+    if (banner) {
+      banner.style.display = 'flex';
+    }
+  }
+}
+
 // Install E-Blocks drivers
 async function installDrivers() {
   const btn = document.getElementById('install-drivers-btn');
+  const bannerBtn = document.getElementById('driver-banner-install-btn');
   const statusDiv = document.getElementById('driver-status');
   
-  if (!btn || !statusDiv) {
-    console.error('Driver installation UI elements not found');
-    return;
+  // Disable both buttons if they exist
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Installing...';
+  }
+  if (bannerBtn) {
+    bannerBtn.disabled = true;
+    bannerBtn.textContent = 'Installing...';
   }
   
-  btn.disabled = true;
-  btn.textContent = 'Installing...';
-  statusDiv.style.display = 'block';
-  statusDiv.className = 'driver-status driver-status-info';
-  statusDiv.textContent = 'Installing E-Blocks USB drivers... This may take a moment.';
+  if (statusDiv) {
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'driver-status driver-status-info';
+    statusDiv.textContent = 'Installing E-Blocks USB drivers... This may take a moment.';
+  }
   
   try {
     const response = await fetch('/api/install-drivers', {
@@ -215,25 +252,49 @@ async function installDrivers() {
     const result = await response.json();
     
     if (result.success) {
-      statusDiv.className = 'driver-status driver-status-success';
-      statusDiv.textContent = result.message || 'Drivers installed successfully! Please reconnect your E-Blocks board and refresh ports.';
-      btn.textContent = '✓ Installed';
+      if (statusDiv) {
+        statusDiv.className = 'driver-status driver-status-success';
+        statusDiv.textContent = result.message || 'Drivers installed successfully! Please reconnect your E-Blocks board and refresh ports.';
+      }
+      if (btn) {
+        btn.textContent = '✓ Installed';
+      }
+      if (bannerBtn) {
+        bannerBtn.textContent = '✓ Installed';
+      }
       
       // Refresh ports after a short delay
       setTimeout(() => {
         refreshPorts();
       }, 2000);
       
-      // Reset button after 5 seconds
+      // Reset buttons after 5 seconds
       setTimeout(() => {
+        if (btn) {
+          btn.textContent = '🔧 Install Drivers';
+          btn.disabled = false;
+        }
+        if (bannerBtn) {
+          bannerBtn.textContent = 'Install Drivers';
+          bannerBtn.disabled = false;
+        }
+      }, 5000);
+      
+      // Recheck drivers to hide banner if installation succeeded
+      setTimeout(checkDrivers, 2000);
+    } else {
+      if (statusDiv) {
+        statusDiv.className = 'driver-status driver-status-error';
+        statusDiv.textContent = result.error || 'Failed to install drivers. Please try running the installer manually from the drivers folder.';
+      }
+      if (btn) {
         btn.textContent = '🔧 Install Drivers';
         btn.disabled = false;
-      }, 5000);
-    } else {
-      statusDiv.className = 'driver-status driver-status-error';
-      statusDiv.textContent = result.error || 'Failed to install drivers. Please try running the installer manually from the drivers folder.';
-      btn.textContent = '🔧 Install Drivers';
-      btn.disabled = false;
+      }
+      if (bannerBtn) {
+        bannerBtn.textContent = 'Install Drivers';
+        bannerBtn.disabled = false;
+      }
     }
   } catch (error) {
     console.error('Driver installation error:', error);
@@ -3124,6 +3185,12 @@ function initializeApp() {
   // Check Arduino CLI
   checkArduinoCLI();
   
+  // Check drivers and show/hide banner
+  checkDrivers();
+  
+  // Recheck drivers periodically (every 30 seconds) in case they get installed
+  setInterval(checkDrivers, 30000);
+  
   // Load curriculum UI (data is manually coded, no file parsing needed)
   try {
     loadCurriculum();
@@ -3158,10 +3225,19 @@ function initializeApp() {
   try {
     document.getElementById('refresh-ports-btn').addEventListener('click', refreshPorts);
     
-    // Driver installation button
+    // Driver installation buttons (sidebar and banner)
     const installDriversBtn = document.getElementById('install-drivers-btn');
     if (installDriversBtn) {
       installDriversBtn.addEventListener('click', installDrivers);
+    }
+    
+    const bannerInstallBtn = document.getElementById('driver-banner-install-btn');
+    if (bannerInstallBtn) {
+      bannerInstallBtn.addEventListener('click', async () => {
+        await installDrivers();
+        // Recheck drivers after installation to hide banner
+        setTimeout(checkDrivers, 2000);
+      });
     }
     
     // Setup upload button - initially disabled until connection is established

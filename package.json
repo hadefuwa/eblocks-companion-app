@@ -1,6 +1,6 @@
 {
   "name": "eblocks-companion-app",
-  "version": "2.4.0",
+  "version": "2.7.0",
   "description": "Companion app for E-Blocks 3 - Connect, upload code, and monitor serial output",
   "main": "src/wrapper.cjs",
   "scripts": {
@@ -91,6 +91,7 @@
     },
     "asarUnpack": [
       "src/renderer/**/*",
+      "src/preload.js",
       "assets/**/*",
       "node_modules/monaco-editor/**/*",
       "resources/arduino-cli/**/*"

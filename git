@@ -1,5 +1,5 @@
 git add .
 git commit -m "updates"
 git push origin main
-git tag -a v2.5.0 -m "Release"
-git push origin v2.5.0
+git tag -a v2.7.0 -m "Release"
+git push origin v2.7.0
