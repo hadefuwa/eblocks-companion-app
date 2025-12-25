@@ -84,24 +84,28 @@ let selectedPort = null;
 let detectedBoardFQBN = null; // Store the detected board FQBN from the connected port
 let portInfoMap = new Map(); // Map to store port information (port -> {fqbn, board})
 let serialData = [];
+let selectedComboPorts = 'a/b'; // Selected port pair for combo board (default: A/B)
 
 // Initialize Monaco Editor - REQUIRED, app cannot function without it
-if (typeof require === 'undefined' || typeof require.config !== 'function') {
-  const errorMsg = 'CRITICAL ERROR: Monaco Editor is not available.\n\n' +
-                  'require is not defined or require.config is not a function.\n' +
-                  'The app cannot function without Monaco Editor.\n\n' +
-                  'Please check:\n' +
-                  '1. That loader.js loaded correctly\n' +
-                  '2. That node_modules/monaco-editor is accessible\n' +
-                  '3. Check the browser console for detailed errors';
-  alert(errorMsg);
-  console.error('Monaco Editor initialization failed: require is not available');
-  throw new Error('Monaco Editor is required but not available');
-}
+// Only initialize if we're on a page that needs it (has monaco-editor container)
+const editorContainer = document.getElementById('monaco-editor');
+if (editorContainer) {
+  if (typeof require === 'undefined' || typeof require.config !== 'function') {
+    const errorMsg = 'CRITICAL ERROR: Monaco Editor is not available.\n\n' +
+                    'require is not defined or require.config is not a function.\n' +
+                    'The app cannot function without Monaco Editor.\n\n' +
+                    'Please check:\n' +
+                    '1. That loader.js loaded correctly\n' +
+                    '2. That node_modules/monaco-editor is accessible\n' +
+                    '3. Check the browser console for detailed errors';
+    alert(errorMsg);
+    console.error('Monaco Editor initialization failed: require is not available');
+    throw new Error('Monaco Editor is required but not available');
+  }
 
-require.config({ paths: { vs: '/node_modules/monaco-editor/min/vs' } });
+  require.config({ paths: { vs: '/node_modules/monaco-editor/min/vs' } });
 
-require(['vs/editor/editor.main'], function () {
+  require(['vs/editor/editor.main'], function () {
   const editorContainer = document.getElementById('monaco-editor');
   
   if (!editorContainer) {
@@ -113,18 +117,24 @@ require(['vs/editor/editor.main'], function () {
   }
 
   try {
+    // Load editor settings from localStorage
+    const fontSize = parseInt(localStorage.getItem('editor-font-size') || '14');
+    const tabSize = parseInt(localStorage.getItem('editor-tab-size') || '2');
+    const wordWrap = localStorage.getItem('editor-word-wrap') !== 'false';
+    const minimap = localStorage.getItem('editor-minimap') !== 'false';
+
     monacoEditor = monaco.editor.create(editorContainer, {
       value: DEFAULT_CODE,
       language: 'cpp',
       theme: 'vs-dark',
-      minimap: { enabled: true },
-      fontSize: 14,
+      minimap: { enabled: minimap },
+      fontSize: fontSize,
       lineNumbers: 'on',
       roundedSelection: false,
       scrollBeyondLastLine: false,
       automaticLayout: true,
-      tabSize: 2,
-      wordWrap: 'on',
+      tabSize: tabSize,
+      wordWrap: wordWrap ? 'on' : 'off',
     });
 
     console.log('Monaco Editor initialized successfully');
@@ -157,10 +167,14 @@ require(['vs/editor/editor.main'], function () {
                   '1. The Monaco Editor files are not accessible\n' +
                   '2. The path configuration is incorrect\n' +
                   '3. Check the browser console and network tab for 404 errors';
-  alert(errorMsg);
-  console.error('Monaco Editor main module load failed:', error);
-  throw error;
-});
+    alert(errorMsg);
+    console.error('Monaco Editor main module load failed:', error);
+    throw error;
+  });
+} else {
+  // Not on a page that needs Monaco Editor (e.g., settings page)
+  console.log('Monaco Editor not needed on this page');
+}
 
 // Check Arduino CLI status on load (removed from UI, but kept for logging)
 async function checkArduinoCLI() {
@@ -221,24 +235,12 @@ async function checkDrivers() {
 
 // Install E-Blocks drivers
 async function installDrivers() {
-  const btn = document.getElementById('install-drivers-btn');
   const bannerBtn = document.getElementById('driver-banner-install-btn');
-  const statusDiv = document.getElementById('driver-status');
   
-  // Disable both buttons if they exist
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Installing...';
-  }
+  // Disable banner button if it exists
   if (bannerBtn) {
     bannerBtn.disabled = true;
     bannerBtn.textContent = 'Installing...';
-  }
-  
-  if (statusDiv) {
-    statusDiv.style.display = 'block';
-    statusDiv.className = 'driver-status driver-status-info';
-    statusDiv.textContent = 'Installing E-Blocks USB drivers... This may take a moment.';
   }
   
   try {
@@ -252,13 +254,6 @@ async function installDrivers() {
     const result = await response.json();
     
     if (result.success) {
-      if (statusDiv) {
-        statusDiv.className = 'driver-status driver-status-success';
-        statusDiv.textContent = result.message || 'Drivers installed successfully! Please reconnect your E-Blocks board and refresh ports.';
-      }
-      if (btn) {
-        btn.textContent = '✓ Installed';
-      }
       if (bannerBtn) {
         bannerBtn.textContent = '✓ Installed';
       }
@@ -268,12 +263,8 @@ async function installDrivers() {
         refreshPorts();
       }, 2000);
       
-      // Reset buttons after 5 seconds
+      // Reset button after 5 seconds
       setTimeout(() => {
-        if (btn) {
-          btn.textContent = '🔧 Install Drivers';
-          btn.disabled = false;
-        }
         if (bannerBtn) {
           bannerBtn.textContent = 'Install Drivers';
           bannerBtn.disabled = false;
@@ -283,14 +274,6 @@ async function installDrivers() {
       // Recheck drivers to hide banner if installation succeeded
       setTimeout(checkDrivers, 2000);
     } else {
-      if (statusDiv) {
-        statusDiv.className = 'driver-status driver-status-error';
-        statusDiv.textContent = result.error || 'Failed to install drivers. Please try running the installer manually from the drivers folder.';
-      }
-      if (btn) {
-        btn.textContent = '🔧 Install Drivers';
-        btn.disabled = false;
-      }
       if (bannerBtn) {
         bannerBtn.textContent = 'Install Drivers';
         bannerBtn.disabled = false;
@@ -298,27 +281,32 @@ async function installDrivers() {
     }
   } catch (error) {
     console.error('Driver installation error:', error);
-    statusDiv.className = 'driver-status driver-status-error';
-    statusDiv.textContent = 'Error installing drivers: ' + error.message;
-    btn.textContent = '🔧 Install Drivers';
-    btn.disabled = false;
+    if (bannerBtn) {
+      bannerBtn.textContent = 'Install Drivers';
+      bannerBtn.disabled = false;
+    }
   }
 }
 
 // Refresh COM ports
 async function refreshPorts() {
-  const select = document.getElementById('com-port-select');
-  const btn = document.getElementById('refresh-ports-btn');
+  const select = document.getElementById('com-port-select') || document.getElementById('settings-com-port-select');
+  const btn = document.getElementById('refresh-ports-btn') || document.getElementById('settings-refresh-ports-btn');
 
-  btn.disabled = true;
-  btn.textContent = '⟳';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⟳';
+  }
 
   try {
     const response = await fetch('/api/ports');
     const result = await response.json();
-    select.innerHTML = '<option value="">Select a port...</option>';
+    
+    if (select) {
+      select.innerHTML = '<option value="">Select a port...</option>';
+    }
 
-    if (result.success && result.ports.length > 0) {
+    if (result.success && result.ports.length > 0 && select) {
       result.ports.forEach(port => {
         const option = document.createElement('option');
         option.value = port.port;
@@ -334,8 +322,10 @@ async function refreshPorts() {
   } catch (error) {
     console.error('Error refreshing ports:', error);
   } finally {
-    btn.disabled = false;
-    btn.textContent = '↻';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '↻';
+    }
   }
 }
 
@@ -347,6 +337,7 @@ function updateConnectionStatus(connected, port = null, detectedFQBN = null) {
     detectedBoardFQBN = detectedFQBN;
   }
 
+  // Status indicator elements (removed from UI, but code kept for compatibility)
   const dot = document.getElementById('connection-status-dot');
   const text = document.getElementById('connection-status-text');
   const boardImage = document.getElementById('board-image');
@@ -394,8 +385,9 @@ function updateConnectionStatus(connected, port = null, detectedFQBN = null) {
   const isFullyConnected = connected && port && boardTypeMatches;
 
   if (isFullyConnected) {
-    dot.classList.add('connected');
-    text.textContent = `Connected to ${port}`;
+    // Update status indicator if it exists (removed from UI but keeping code for compatibility)
+    if (dot) dot.classList.add('connected');
+    if (text) text.textContent = `Connected to ${port}`;
     // Update board image glow to green
     if (boardImage) {
       boardImage.classList.remove('disconnected');
@@ -406,11 +398,14 @@ function updateConnectionStatus(connected, port = null, detectedFQBN = null) {
       uploadBtn.disabled = false;
     }
   } else {
-    dot.classList.remove('connected');
-    if (connected && port && !boardTypeMatches) {
-      text.textContent = `Connected to ${port} (board mismatch)`;
-    } else {
-      text.textContent = 'Not connected';
+    // Update status indicator if it exists (removed from UI but keeping code for compatibility)
+    if (dot) dot.classList.remove('connected');
+    if (text) {
+      if (connected && port && !boardTypeMatches) {
+        text.textContent = `Connected to ${port} (board mismatch)`;
+      } else {
+        text.textContent = 'Not connected';
+      }
     }
     // Update board image glow to red
     if (boardImage) {
@@ -430,8 +425,8 @@ function updateConnectionStatus(connected, port = null, detectedFQBN = null) {
 
 // Flash warning when no port is selected
 function flashPortWarning() {
-  const portSelect = document.getElementById('com-port-select');
-  const warning = document.getElementById('port-warning');
+  const portSelect = document.getElementById('com-port-select') || document.getElementById('settings-com-port-select');
+  const warning = document.getElementById('port-warning') || document.getElementById('settings-port-warning');
   
   if (!portSelect || !warning) return;
   
@@ -457,7 +452,7 @@ function flashPortWarning() {
 
 // Get the reason why upload is disabled
 function getUploadDisabledReason() {
-  const portSelect = document.getElementById('com-port-select');
+  const portSelect = document.getElementById('com-port-select') || document.getElementById('settings-com-port-select');
   const port = portSelect ? portSelect.value : null;
   const boardSelect = document.getElementById('editor-board-select');
   const selectedBoardType = boardSelect ? boardSelect.value : null;
@@ -529,11 +524,11 @@ async function uploadCode() {
 
   const code = monacoEditor.getValue();
   const board = document.getElementById('editor-board-select').value;
-  const portSelect = document.getElementById('com-port-select');
-  const port = portSelect.value || 'auto';
+  const portSelect = document.getElementById('com-port-select') || document.getElementById('settings-com-port-select');
+  const port = portSelect ? (portSelect.value || 'auto') : 'auto';
 
   // Check if port is selected
-  if (!portSelect.value || portSelect.value === '') {
+  if (!portSelect || !portSelect.value || portSelect.value === '') {
     flashPortWarning();
     showUploadStatus('error', 'Please select a COM port first');
     return;
@@ -652,11 +647,16 @@ function addSerialLine(data) {
   content.appendChild(line);
 
   // Auto-scroll
-  if (document.getElementById('autoscroll-checkbox').checked) {
-    content.scrollTop = content.scrollHeight;
+  if (document.getElementById('autoscroll-checkbox')) {
+    if (document.getElementById('autoscroll-checkbox').checked) {
+      content.scrollTop = content.scrollHeight;
+    }
   }
 
   serialData.push({ timestamp: new Date(), data });
+
+  // Parse combo board data if present
+  parseComboBoardData(data);
 }
 
 // Clear serial monitor
@@ -798,7 +798,8 @@ async function autoConnectToPort(portPath) {
     updateConnectionStatus(false);
     showUploadStatus('info', `Connecting to ${portPath}...`);
 
-    const baudRate = document.getElementById('baud-rate-select').value;
+    const baudRateSelect = document.getElementById('baud-rate-select') || document.getElementById('settings-baud-rate-select');
+    const baudRate = baudRateSelect ? baudRateSelect.value : '115200';
     const response = await fetch('/api/connect', {
       method: 'POST',
       headers: {
@@ -3191,6 +3192,9 @@ function initializeApp() {
   // Recheck drivers periodically (every 30 seconds) in case they get installed
   setInterval(checkDrivers, 30000);
   
+  // Initialize combo board visualization
+  initializeComboBoard();
+  
   // Load curriculum UI (data is manually coded, no file parsing needed)
   try {
     loadCurriculum();
@@ -3223,14 +3227,12 @@ function initializeApp() {
 
   // Event listeners
   try {
-    document.getElementById('refresh-ports-btn').addEventListener('click', refreshPorts);
-    
-    // Driver installation buttons (sidebar and banner)
-    const installDriversBtn = document.getElementById('install-drivers-btn');
-    if (installDriversBtn) {
-      installDriversBtn.addEventListener('click', installDrivers);
+    const refreshBtn = document.getElementById('refresh-ports-btn') || document.getElementById('settings-refresh-ports-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', refreshPorts);
     }
     
+    // Driver installation button (banner only)
     const bannerInstallBtn = document.getElementById('driver-banner-install-btn');
     if (bannerInstallBtn) {
       bannerInstallBtn.addEventListener('click', async () => {
@@ -3266,9 +3268,28 @@ function initializeApp() {
     document.getElementById('clear-monitor-btn').addEventListener('click', clearSerialMonitor);
 
     // Auto-connect when COM port is selected
-    document.getElementById('com-port-select').addEventListener('change', (e) => {
-      autoConnectToPort(e.target.value);
-    });
+    const portSelect = document.getElementById('com-port-select') || document.getElementById('settings-com-port-select');
+    if (portSelect) {
+      portSelect.addEventListener('change', (e) => {
+        autoConnectToPort(e.target.value);
+      });
+    }
+
+    // Combo board port selection
+    const comboPortSelect = document.getElementById('combo-port-select');
+    if (comboPortSelect) {
+      // Load saved selection from localStorage
+      const savedPorts = localStorage.getItem('combo-board-ports') || 'a/b';
+      comboPortSelect.value = savedPorts;
+      selectedComboPorts = savedPorts;
+      updateComboBoardPortLabels();
+      
+      comboPortSelect.addEventListener('change', (e) => {
+        selectedComboPorts = e.target.value;
+        localStorage.setItem('combo-board-ports', selectedComboPorts);
+        updateComboBoardPortLabels();
+      });
+    }
 
     // Update board image when board type changes
     document.getElementById('editor-board-select').addEventListener('change', updateBoardImage);
@@ -3323,6 +3344,94 @@ function stopSerialPolling() {
     clearInterval(serialPollInterval);
     serialPollInterval = null;
   }
+  // Reset combo board when disconnected
+  resetComboBoard();
+}
+
+// Combo Board Visualization Functions
+function parseComboBoardData(data) {
+  // Get selected port pair
+  const [firstPort, secondPort] = selectedComboPorts.split('/');
+  const firstPortName = `Port ${firstPort.toUpperCase()}`;
+  const secondPortName = `Port ${secondPort.toUpperCase()}`;
+  
+  // Look for pattern: "Port X: 0 1 0 1 0 1 0 1 | Port Y: 0 1 0 1 0 1 0 1"
+  const firstPortPattern = new RegExp(`${firstPortName}:\\s*([01])\\s+([01])\\s+([01])\\s+([01])\\s+([01])\\s+([01])\\s+([01])\\s+([01])`, 'i');
+  const secondPortPattern = new RegExp(`\\|\\s*${secondPortName}:\\s*([01])\\s+([01])\\s+([01])\\s+([01])\\s+([01])\\s+([01])\\s+([01])\\s+([01])`, 'i');
+  
+  const firstPortMatch = data.match(firstPortPattern);
+  const secondPortMatch = data.match(secondPortPattern);
+
+  if (firstPortMatch || secondPortMatch) {
+    // Update status to active
+    const statusEl = document.getElementById('combo-board-status');
+    if (statusEl) {
+      statusEl.classList.remove('inactive');
+      statusEl.classList.add('active');
+      statusEl.querySelector('.status-text').textContent = 'Receiving data';
+    }
+
+    // Update First Port LEDs (top row)
+    if (firstPortMatch) {
+      for (let i = 0; i < 8; i++) {
+        const bit = parseInt(firstPortMatch[i + 1]);
+        updateComboLED('first', i, bit);
+      }
+    }
+
+    // Update Second Port LEDs (bottom row)
+    if (secondPortMatch) {
+      for (let i = 0; i < 8; i++) {
+        const bit = parseInt(secondPortMatch[i + 1]);
+        updateComboLED('second', i, bit);
+      }
+    }
+  }
+}
+
+function updateComboLED(port, bit, state) {
+  const portType = port.toLowerCase(); // 'first' or 'second'
+  const led = document.querySelector(`.combo-led[data-port="${portType}"][data-bit="${bit}"]`);
+  if (!led) return;
+
+  // Remove all state classes
+  led.classList.remove('on', 'off', 'unknown');
+
+  if (state === 1) {
+    led.classList.add('on');
+  } else if (state === 0) {
+    led.classList.add('off');
+  } else {
+    led.classList.add('unknown');
+  }
+}
+
+function resetComboBoard() {
+  // Reset all LEDs to unknown state
+  for (let port of ['first', 'second']) {
+    for (let bit = 0; bit < 8; bit++) {
+      updateComboLED(port, bit, null);
+    }
+  }
+
+  // Update status
+  const statusEl = document.getElementById('combo-board-status');
+  if (statusEl) {
+    statusEl.classList.remove('active');
+    statusEl.classList.add('inactive');
+    statusEl.querySelector('.status-text').textContent = 'Waiting for data...';
+  }
+}
+
+function updateComboBoardPortLabels() {
+  // Port labels removed from center display
+  // Reset board when port selection changes
+  resetComboBoard();
+}
+
+// Initialize combo board on page load
+function initializeComboBoard() {
+  resetComboBoard();
 }
 
 // Start polling when connected

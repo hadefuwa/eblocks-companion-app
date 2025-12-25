@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - E-Blocks 3 Companion</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Titlebar -->
+    <header class="app-titlebar">
+      <div class="titlebar-icon">
+        <img src="/assets/matrix.png" alt="Matrix Logo" class="titlebar-logo">
+      </div>
+      <div class="titlebar-title">E-Blocks 3 Companion</div>
+      <div class="titlebar-menu">
+        <button id="menu-code-editor" class="menu-btn">Code Editor</button>
+        <button id="menu-graphical" class="menu-btn" disabled>Graphical</button>
+        <button id="menu-shop" class="menu-btn">Shop</button>
+        <button id="menu-settings" class="menu-btn active">⚙️ Settings</button>
+      </div>
+    </header>
+
+    <!-- Menu Navigation Script -->
+    <script>
+      // Handle menu navigation - run immediately when DOM is ready
+      (function() {
+        function initMenuNavigation() {
+          const codeEditorBtn = document.getElementById('menu-code-editor');
+          const shopBtn = document.getElementById('menu-shop');
+          const settingsBtn = document.getElementById('menu-settings');
+          
+          if (codeEditorBtn) {
+            codeEditorBtn.addEventListener('click', () => {
+              window.location.href = '/index.html';
+            });
+          }
+          
+          if (shopBtn) {
+            shopBtn.addEventListener('click', () => {
+              window.location.href = '/shop.html';
+            });
+          }
+          
+          if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+              // Already on settings page
+              settingsBtn.classList.add('active');
+            });
+          }
+        }
+        
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initMenuNavigation);
+        } else {
+          initMenuNavigation();
+        }
+      })();
+    </script>
+
+    <!-- Main Container -->
+    <main class="app-container" style="justify-content: center; align-items: flex-start; overflow-y: auto; padding: 20px;">
+      <div class="settings-page">
+        <div class="settings-header">
+          <h1>Settings</h1>
+          <p class="settings-subtitle">Configure your connection and application preferences</p>
+        </div>
+
+        <div class="settings-content settings-grid">
+          <!-- Connection Settings Section -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h2>Connection Settings</h2>
+            </div>
+            
+            <div class="settings-item">
+              <label for="settings-com-port-select">COM Port</label>
+              <div class="port-selector-group">
+                <select id="settings-com-port-select" class="port-select">
+                  <option value="">Select a port...</option>
+                </select>
+                <button id="settings-refresh-ports-btn" class="btn-scan" title="Refresh ports">↻</button>
+              </div>
+              <div id="settings-port-warning" class="port-warning" style="display: none;">No COM port selected</div>
+            </div>
+
+            <div class="settings-item">
+              <label for="settings-baud-rate-select">Baud Rate</label>
+              <select id="settings-baud-rate-select" class="baud-select">
+                <option value="9600">9600</option>
+                <option value="19200">19200</option>
+                <option value="38400">38400</option>
+                <option value="57600">57600</option>
+                <option value="115200" selected>115200</option>
+                <option value="230400">230400</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Editor Settings Section -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h2>Editor Settings</h2>
+            </div>
+            
+            <div class="settings-item">
+              <label for="settings-font-size">Font Size</label>
+              <select id="settings-font-size" class="settings-select">
+                <option value="10">10px</option>
+                <option value="11">11px</option>
+                <option value="12">12px</option>
+                <option value="13">13px</option>
+                <option value="14" selected>14px</option>
+                <option value="15">15px</option>
+                <option value="16">16px</option>
+                <option value="18">18px</option>
+                <option value="20">20px</option>
+              </select>
+            </div>
+
+            <div class="settings-item">
+              <label for="settings-tab-size">Tab Size</label>
+              <select id="settings-tab-size" class="settings-select">
+                <option value="2" selected>2 spaces</option>
+                <option value="4">4 spaces</option>
+                <option value="8">8 spaces</option>
+              </select>
+            </div>
+
+            <div class="settings-item">
+              <label for="settings-word-wrap">
+                <input type="checkbox" id="settings-word-wrap" checked>
+                Word Wrap
+              </label>
+            </div>
+
+            <div class="settings-item">
+              <label for="settings-minimap">
+                <input type="checkbox" id="settings-minimap" checked>
+                Show Minimap
+              </label>
+            </div>
+          </div>
+
+          <!-- Serial Monitor Settings Section -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h2>Serial Monitor Settings</h2>
+            </div>
+            
+            <div class="settings-item">
+              <label for="settings-auto-scroll">
+                <input type="checkbox" id="settings-auto-scroll" checked>
+                Auto-scroll to bottom
+              </label>
+            </div>
+
+            <div class="settings-item">
+              <label for="settings-show-timestamps">
+                <input type="checkbox" id="settings-show-timestamps">
+                Show timestamps
+              </label>
+            </div>
+
+            <div class="settings-item">
+              <label for="settings-max-buffer">Max Buffer Lines</label>
+              <select id="settings-max-buffer" class="settings-select">
+                <option value="100">100 lines</option>
+                <option value="500" selected>500 lines</option>
+                <option value="1000">1000 lines</option>
+                <option value="2000">2000 lines</option>
+                <option value="5000">5000 lines</option>
+                <option value="0">Unlimited</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Upload Settings Section -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h2>Upload Settings</h2>
+            </div>
+            
+            <div class="settings-item">
+              <label for="settings-auto-connect">
+                <input type="checkbox" id="settings-auto-connect" checked>
+                Auto-connect after upload
+              </label>
+            </div>
+
+            <div class="settings-item">
+              <label for="settings-verify-upload">
+                <input type="checkbox" id="settings-verify-upload" checked>
+                Verify after upload
+              </label>
+            </div>
+          </div>
+
+          <!-- General Settings Section -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h2>General Settings</h2>
+            </div>
+            
+            <div class="settings-item">
+              <label for="settings-auto-refresh-ports">
+                <input type="checkbox" id="settings-auto-refresh-ports" checked>
+                Auto-refresh ports on startup
+              </label>
+            </div>
+
+            <div class="settings-item">
+              <label for="settings-check-updates">
+                <input type="checkbox" id="settings-check-updates" checked>
+                Check for updates on startup
+              </label>
+            </div>
+          </div>
+
+          <!-- Application Settings Section -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h2>Application Information</h2>
+            </div>
+            
+            <div class="settings-item">
+              <label>Version</label>
+              <div class="settings-info">2.7.0</div>
+            </div>
+
+            <div class="settings-item">
+              <label>Arduino CLI Version</label>
+              <div class="settings-info" id="settings-cli-version">Checking...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Load app.js for shared functionality -->
+  <script src="app.js"></script>
+  <script>
+    // Settings page specific initialization
+    (function() {
+      // Wait for app.js to load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSettingsPage);
+      } else {
+        setTimeout(initSettingsPage, 100);
+      }
+
+      async function refreshPortsForSettings() {
+        try {
+          const response = await fetch('/api/ports');
+          const result = await response.json();
+          const settingsPortSelect = document.getElementById('settings-com-port-select');
+          
+          if (settingsPortSelect && result.success && result.ports.length > 0) {
+            settingsPortSelect.innerHTML = '<option value="">Select a port...</option>';
+            result.ports.forEach(port => {
+              const option = document.createElement('option');
+              option.value = port.port;
+              option.textContent = `${port.port} - ${port.board}`;
+              settingsPortSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error refreshing ports:', error);
+        }
+      }
+
+      function initSettingsPage() {
+        const settingsPortSelect = document.getElementById('settings-com-port-select');
+        const settingsRefreshBtn = document.getElementById('settings-refresh-ports-btn');
+        const settingsBaudSelect = document.getElementById('settings-baud-rate-select');
+        
+        // Refresh ports button
+        if (settingsRefreshBtn) {
+          settingsRefreshBtn.addEventListener('click', refreshPortsForSettings);
+        }
+
+        // Port selector change - sync to main app if it exists
+        if (settingsPortSelect) {
+          settingsPortSelect.addEventListener('change', () => {
+            // Try to sync to main app's port selector if it exists
+            const mainPortSelect = document.getElementById('com-port-select');
+            if (mainPortSelect) {
+              mainPortSelect.value = settingsPortSelect.value;
+              // Trigger change event on main selector
+              mainPortSelect.dispatchEvent(new Event('change'));
+            }
+          });
+        }
+
+        // Baud rate selector change - sync to main app if it exists
+        if (settingsBaudSelect) {
+          settingsBaudSelect.addEventListener('change', () => {
+            const mainBaudSelect = document.getElementById('baud-rate-select');
+            if (mainBaudSelect) {
+              mainBaudSelect.value = settingsBaudSelect.value;
+            }
+          });
+        }
+
+        // Initial load - sync from main app if available
+        setTimeout(() => {
+          const mainPortSelect = document.getElementById('com-port-select');
+          const mainBaudSelect = document.getElementById('baud-rate-select');
+          
+          if (mainPortSelect && settingsPortSelect) {
+            settingsPortSelect.innerHTML = mainPortSelect.innerHTML;
+            settingsPortSelect.value = mainPortSelect.value;
+          }
+          
+          if (mainBaudSelect && settingsBaudSelect) {
+            settingsBaudSelect.value = mainBaudSelect.value;
+          }
+          
+          // If no main app elements, refresh ports directly
+          if (!mainPortSelect) {
+            refreshPortsForSettings();
+          }
+        }, 500);
+
+        // Load and apply editor settings
+        loadEditorSettings();
+        
+        // Load and apply serial monitor settings
+        loadSerialMonitorSettings();
+        
+        // Load and apply upload settings
+        loadUploadSettings();
+        
+        // Load and apply general settings
+        loadGeneralSettings();
+        
+        // Check Arduino CLI version
+        checkArduinoCLIVersion();
+      }
+
+      function loadEditorSettings() {
+        // Load from localStorage or use defaults
+        const fontSize = localStorage.getItem('editor-font-size') || '14';
+        const tabSize = localStorage.getItem('editor-tab-size') || '2';
+        const wordWrap = localStorage.getItem('editor-word-wrap') !== 'false';
+        const minimap = localStorage.getItem('editor-minimap') !== 'false';
+
+        const fontSizeSelect = document.getElementById('settings-font-size');
+        const tabSizeSelect = document.getElementById('settings-tab-size');
+        const wordWrapCheck = document.getElementById('settings-word-wrap');
+        const minimapCheck = document.getElementById('settings-minimap');
+
+        if (fontSizeSelect) {
+          fontSizeSelect.value = fontSize;
+          fontSizeSelect.addEventListener('change', (e) => {
+            localStorage.setItem('editor-font-size', e.target.value);
+            applyEditorSettings();
+          });
+        }
+
+        if (tabSizeSelect) {
+          tabSizeSelect.value = tabSize;
+          tabSizeSelect.addEventListener('change', (e) => {
+            localStorage.setItem('editor-tab-size', e.target.value);
+            applyEditorSettings();
+          });
+        }
+
+        if (wordWrapCheck) {
+          wordWrapCheck.checked = wordWrap;
+          wordWrapCheck.addEventListener('change', (e) => {
+            localStorage.setItem('editor-word-wrap', e.target.checked);
+            applyEditorSettings();
+          });
+        }
+
+        if (minimapCheck) {
+          minimapCheck.checked = minimap;
+          minimapCheck.addEventListener('change', (e) => {
+            localStorage.setItem('editor-minimap', e.target.checked);
+            applyEditorSettings();
+          });
+        }
+      }
+
+      function applyEditorSettings() {
+        // Apply to Monaco Editor if it exists (in main app)
+        if (typeof monacoEditor !== 'undefined' && monacoEditor) {
+          const fontSize = localStorage.getItem('editor-font-size') || '14';
+          const tabSize = parseInt(localStorage.getItem('editor-tab-size') || '2');
+          const wordWrap = localStorage.getItem('editor-word-wrap') !== 'false';
+          const minimap = localStorage.getItem('editor-minimap') !== 'false';
+
+          monacoEditor.updateOptions({
+            fontSize: parseInt(fontSize),
+            tabSize: tabSize,
+            wordWrap: wordWrap ? 'on' : 'off',
+            minimap: { enabled: minimap }
+          });
+        }
+      }
+
+      function loadSerialMonitorSettings() {
+        const autoScroll = localStorage.getItem('serial-auto-scroll') !== 'false';
+        const showTimestamps = localStorage.getItem('serial-show-timestamps') === 'true';
+        const maxBuffer = localStorage.getItem('serial-max-buffer') || '500';
+
+        const autoScrollCheck = document.getElementById('settings-auto-scroll');
+        const timestampsCheck = document.getElementById('settings-show-timestamps');
+        const maxBufferSelect = document.getElementById('settings-max-buffer');
+
+        if (autoScrollCheck) {
+          autoScrollCheck.checked = autoScroll;
+          autoScrollCheck.addEventListener('change', (e) => {
+            localStorage.setItem('serial-auto-scroll', e.target.checked);
+          });
+        }
+
+        if (timestampsCheck) {
+          timestampsCheck.checked = showTimestamps;
+          timestampsCheck.addEventListener('change', (e) => {
+            localStorage.setItem('serial-show-timestamps', e.target.checked);
+          });
+        }
+
+        if (maxBufferSelect) {
+          maxBufferSelect.value = maxBuffer;
+          maxBufferSelect.addEventListener('change', (e) => {
+            localStorage.setItem('serial-max-buffer', e.target.value);
+          });
+        }
+      }
+
+      function loadUploadSettings() {
+        const autoConnect = localStorage.getItem('upload-auto-connect') !== 'false';
+        const verify = localStorage.getItem('upload-verify') !== 'false';
+
+        const autoConnectCheck = document.getElementById('settings-auto-connect');
+        const verifyCheck = document.getElementById('settings-verify-upload');
+
+        if (autoConnectCheck) {
+          autoConnectCheck.checked = autoConnect;
+          autoConnectCheck.addEventListener('change', (e) => {
+            localStorage.setItem('upload-auto-connect', e.target.checked);
+          });
+        }
+
+        if (verifyCheck) {
+          verifyCheck.checked = verify;
+          verifyCheck.addEventListener('change', (e) => {
+            localStorage.setItem('upload-verify', e.target.checked);
+          });
+        }
+      }
+
+      function loadGeneralSettings() {
+        const autoRefresh = localStorage.getItem('general-auto-refresh-ports') !== 'false';
+        const checkUpdates = localStorage.getItem('general-check-updates') !== 'false';
+
+        const autoRefreshCheck = document.getElementById('settings-auto-refresh-ports');
+        const checkUpdatesCheck = document.getElementById('settings-check-updates');
+
+        if (autoRefreshCheck) {
+          autoRefreshCheck.checked = autoRefresh;
+          autoRefreshCheck.addEventListener('change', (e) => {
+            localStorage.setItem('general-auto-refresh-ports', e.target.checked);
+          });
+        }
+
+        if (checkUpdatesCheck) {
+          checkUpdatesCheck.checked = checkUpdates;
+          checkUpdatesCheck.addEventListener('change', (e) => {
+            localStorage.setItem('general-check-updates', e.target.checked);
+          });
+        }
+      }
+
+      async function checkArduinoCLIVersion() {
+        try {
+          const response = await fetch('/api/check-cli');
+          const result = await response.json();
+          const cliVersionEl = document.getElementById('settings-cli-version');
+          
+          if (cliVersionEl) {
+            if (result.success && result.installed) {
+              const versionMatch = result.version.match(/Version:\s*([^\s]+)/);
+              cliVersionEl.textContent = versionMatch ? versionMatch[1] : result.version.split('\n')[0];
+            } else {
+              cliVersionEl.textContent = 'Not available';
+            }
+          }
+        } catch (error) {
+          const cliVersionEl = document.getElementById('settings-cli-version');
+          if (cliVersionEl) {
+            cliVersionEl.textContent = 'Error checking';
+          }
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
+

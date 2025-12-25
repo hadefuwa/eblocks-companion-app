@@ -217,6 +217,7 @@
         <button id="menu-code-editor" class="menu-btn">Code Editor</button>
         <button id="menu-graphical" class="menu-btn" disabled>Graphical</button>
         <button id="menu-shop" class="menu-btn active">Shop</button>
+        <button id="menu-settings" class="menu-btn">⚙️ Settings</button>
       </div>
     </header>
 
@@ -319,6 +320,13 @@
     document.getElementById('menu-shop').addEventListener('click', () => {
       // Already on shop page
     });
+
+    const settingsBtn = document.getElementById('menu-settings');
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', () => {
+        window.location.href = '/settings.html';
+      });
+    }
   </script>
 </body>
 </html>

@@ -18,6 +18,7 @@
         <button id="menu-code-editor" class="menu-btn active">Code Editor</button>
         <button id="menu-graphical" class="menu-btn" disabled>Graphical</button>
         <button id="menu-shop" class="menu-btn">Shop</button>
+        <button id="menu-settings" class="menu-btn">⚙️ Settings</button>
       </div>
     </header>
 
@@ -28,18 +29,26 @@
         function initMenuNavigation() {
           const codeEditorBtn = document.getElementById('menu-code-editor');
           const shopBtn = document.getElementById('menu-shop');
+          const settingsBtn = document.getElementById('menu-settings');
           
           if (codeEditorBtn) {
             codeEditorBtn.addEventListener('click', () => {
               // Already on code editor page, just ensure active state
               codeEditorBtn.classList.add('active');
               shopBtn?.classList.remove('active');
+              settingsBtn?.classList.remove('active');
             });
           }
           
           if (shopBtn) {
             shopBtn.addEventListener('click', () => {
               window.location.href = '/shop.html';
+            });
+          }
+          
+          if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+              window.location.href = '/settings.html';
             });
           }
         }
@@ -90,49 +99,57 @@
                   <button id="refresh-ports-btn" class="btn-scan" title="Refresh ports">↻</button>
                 </div>
                 <div id="port-warning" class="port-warning" style="display: none;">No COM port selected</div>
-                <div class="driver-help" style="margin-top: 8px;">
-                  <button id="install-drivers-btn" class="btn-driver" title="Install E-Blocks USB drivers">
-                    🔧 Install Drivers
-                  </button>
-                  <div id="driver-status" class="driver-status" style="display: none;"></div>
-                </div>
-              </div>
-              <div class="setup-item">
-                <label>Status</label>
-                <div class="status-indicator">
-                  <span class="status-dot" id="connection-status-dot"></span>
-                  <span class="status-text" id="connection-status-text">Not connected</span>
-                </div>
               </div>
             </div>
 
+            <!-- Combo Board Visualization -->
             <div class="setup-section">
               <div class="section-header">
-                <h3>Connection Settings</h3>
+                <h3>Combo Board</h3>
               </div>
               <div class="setup-item">
-                <label for="baud-rate-select">Baud Rate</label>
-                <select id="baud-rate-select" class="baud-select">
-                  <option value="9600">9600</option>
-                  <option value="19200">19200</option>
-                  <option value="38400">38400</option>
-                  <option value="57600">57600</option>
-                  <option value="115200" selected>115200</option>
-                  <option value="230400">230400</option>
+                <label for="combo-port-select">Port Pair</label>
+                <select id="combo-port-select" class="port-select">
+                  <option value="a/b">Port A / Port B</option>
+                  <option value="b/c">Port B / Port C</option>
+                  <option value="c/d">Port C / Port D</option>
+                  <option value="d/e">Port D / Port E</option>
+                  <option value="e/f">Port E / Port F</option>
                 </select>
               </div>
-            </div>
-
-            <div class="setup-section">
-              <div class="section-header">
-                <h3>About</h3>
-              </div>
-              <div class="about-text">
-                <p>E-Blocks 3 Companion App</p>
-                <p class="version">Version 1.0.0</p>
-                <p class="description">
-                  Connect, program, and monitor your E-Blocks 3 devices with ease.
-                </p>
+              <div class="combo-board-frame">
+                <!-- Top Row - First Port LEDs (8 LEDs) -->
+                <div class="combo-board-row combo-board-row-top">
+                  <div class="combo-led" data-port="first" data-bit="0"></div>
+                  <div class="combo-led" data-port="first" data-bit="1"></div>
+                  <div class="combo-led" data-port="first" data-bit="2"></div>
+                  <div class="combo-led" data-port="first" data-bit="3"></div>
+                  <div class="combo-led" data-port="first" data-bit="4"></div>
+                  <div class="combo-led" data-port="first" data-bit="5"></div>
+                  <div class="combo-led" data-port="first" data-bit="6"></div>
+                  <div class="combo-led" data-port="first" data-bit="7"></div>
+                </div>
+                
+                <!-- Center Display Area -->
+                <div class="combo-board-display">
+                  <div class="combo-board-display-content">
+                    <div class="combo-board-status" id="combo-board-status">
+                      <span class="status-text">Waiting for data...</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Bottom Row - Second Port LEDs (8 LEDs) -->
+                <div class="combo-board-row combo-board-row-bottom">
+                  <div class="combo-led" data-port="second" data-bit="0"></div>
+                  <div class="combo-led" data-port="second" data-bit="1"></div>
+                  <div class="combo-led" data-port="second" data-bit="2"></div>
+                  <div class="combo-led" data-port="second" data-bit="3"></div>
+                  <div class="combo-led" data-port="second" data-bit="4"></div>
+                  <div class="combo-led" data-port="second" data-bit="5"></div>
+                  <div class="combo-led" data-port="second" data-bit="6"></div>
+                  <div class="combo-led" data-port="second" data-bit="7"></div>
+                </div>
               </div>
             </div>
           </div>
